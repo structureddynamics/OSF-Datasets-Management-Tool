@@ -30,7 +30,7 @@
     )
    
    */
-  DebugBreak();
+
   $setup = parse_ini_file(getcwd()."/sync.ini", TRUE);  
   
   // Initiliaze needed resources to run this script
