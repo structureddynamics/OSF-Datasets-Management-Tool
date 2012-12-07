@@ -83,8 +83,11 @@ function defaultConverter($file, $dataset, $setup = array())
         header("HTTP/1.1 500 Internal server error");   
         header('Content-type: text/plain');
              
+        $debugFile = md5(time()).'.error';
+        file_put_contents('/tmp/'.$debugFile, var_export($datasetCreate, TRUE));
+             
         cecho('Can\'t create the dataset for reloading it. '. $datasetCreate->getStatusMessage() . 
-             $datasetCreate->getStatusMessageDescription(), 'RED');
+             $datasetCreate->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
              
         exit;        
       } 
@@ -120,8 +123,11 @@ function defaultConverter($file, $dataset, $setup = array())
       header("HTTP/1.1 500 Internal server error");   
       header('Content-type: text/plain');
 
+      $debugFile = md5(time()).'.error';
+      file_put_contents('/tmp/'.$debugFile, var_export($datasetRead, TRUE));
+      
       cecho('Can\'t read the dataset for reloading it. '. $datasetRead->getStatusMessage() . 
-           $datasetRead->getStatusMessageDescription(), 'RED');
+           $datasetRead->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
            
       exit;
     }
@@ -143,8 +149,11 @@ function defaultConverter($file, $dataset, $setup = array())
         header("HTTP/1.1 500 Internal server error");   
         header('Content-type: text/plain');
 
+        $debugFile = md5(time()).'.error';
+        file_put_contents('/tmp/'.$debugFile, var_export($datasetDelete, TRUE));
+        
         cecho('Can\'t delete the dataset for reloading it. '. $datasetDelete->getStatusMessage() . 
-             $datasetDelete->getStatusMessageDescription(), 'RED');
+             $datasetDelete->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
                 
         exit;
       }
@@ -167,8 +176,11 @@ function defaultConverter($file, $dataset, $setup = array())
           header("HTTP/1.1 500 Internal server error");   
           header('Content-type: text/plain');
                
+          $debugFile = md5(time()).'.error';
+          file_put_contents('/tmp/'.$debugFile, var_export($datasetCreate, TRUE));
+               
           cecho('Can\'t create the dataset for reloading it. '. $datasetCreate->getStatusMessage() . 
-               $datasetCreate->getStatusMessageDescription(), 'RED');
+               $datasetCreate->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
                
           exit;        
         }                      
@@ -452,8 +464,11 @@ function defaultConverter($file, $dataset, $setup = array())
         header("HTTP/1.1 500 Internal server error");   
         header('Content-type: text/plain');   
              
+        $debugFile = md5(time()).'.error';
+        file_put_contents('/tmp/'.$debugFile, var_export($crudCreate, TRUE));
+             
         cecho('Can\'t commit (CRUD Create) a slice to the target dataset. '. $crudCreate->getStatusMessage() . 
-             $crudCreate->getStatusMessageDescription(), 'RED');
+             $crudCreate->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
       }
       
       $end = microtime_float(); 
@@ -490,8 +505,11 @@ function defaultConverter($file, $dataset, $setup = array())
         header("HTTP/1.1 500 Internal server error");   
         header('Content-type: text/plain');
              
+        $debugFile = md5(time()).'.error';
+        file_put_contents('/tmp/'.$debugFile, var_export($crudUpdate, TRUE));
+             
         cecho('Can\'t commit (CRUD Updates) a slice to the target dataset. '. $crudUpdate->getStatusMessage() . 
-             $crudUpdate->getStatusMessageDescription(), 'RED');
+             $crudUpdate->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
       }                 
       
       $end = microtime_float(); 
@@ -518,8 +536,11 @@ function defaultConverter($file, $dataset, $setup = array())
           header("HTTP/1.1 500 Internal server error");   
           header('Content-type: text/plain');
                
+          $debugFile = md5(time()).'.error';
+          file_put_contents('/tmp/'.$debugFile, var_export($crudDelete, TRUE));
+               
           cecho('Can\'t commit (CRUD Delete) a record to the target dataset. '. $crudDelete->getStatusMessage() . 
-               $crudDelete->getStatusMessageDescription(), 'RED');
+               $crudDelete->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
         }        
       }
       
