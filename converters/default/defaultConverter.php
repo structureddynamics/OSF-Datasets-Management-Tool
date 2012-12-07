@@ -44,8 +44,8 @@ function defaultConverter($file, $dataset, $setup = array())
   
   $importDataset = rtrim($setup["datasetURI"], '/').'/import';
   
-  if(isset($dataset['forceReloadSolrIndexed']) && 
-     strtolower($dataset['forceReloadSolrIndexed']) == 'true')
+  if(isset($dataset['forceReloadSolrIndex']) && 
+     strtolower($dataset['forceReloadSolrIndex']) == 'true')
   {
     $importDataset = $dataset['datasetURI'];
   }
@@ -99,14 +99,14 @@ function defaultConverter($file, $dataset, $setup = array())
   }
   
                          
-  if(isset($dataset['forceReloadSolrIndexed']) ||
-     strtolower($dataset['forceReloadSolrIndexed']) == 'true')
+  if(isset($dataset['forceReloadSolrIndex']) &&
+     strtolower($dataset['forceReloadSolrIndex']) == 'true')
   {
     cecho('Reloading dataset in Solr: '.$dataset["datasetURI"]."\n", 'MAGENTA');
   }
                      
   // If we want to reload the dataset, we first delete it in structWSF
-  if(isset($dataset['forceReload']) ||
+  if(isset($dataset['forceReload']) &&
      strtolower($dataset['forceReload']) == 'true')
   {
     cecho('Reloading dataset: '.$dataset["datasetURI"]."\n", 'MAGENTA');
@@ -195,8 +195,8 @@ function defaultConverter($file, $dataset, $setup = array())
   }                         
 
   // Start by deleting the import graph that may have been left over.
-  if(!isset($dataset['forceReloadSolrIndexed']) ||
-     strtolower($dataset['forceReloadSolrIndexed']) == 'false')
+  if(!isset($dataset['forceReloadSolrIndex']) ||
+     strtolower($dataset['forceReloadSolrIndex']) == 'false')
   {
     $sqlQuery = "sparql clear graph <".$importDataset.">";
     
@@ -447,8 +447,8 @@ function defaultConverter($file, $dataset, $setup = array())
                  ->document($crudCreates)
                  ->registeredIp('self');
                  
-      if(isset($dataset['forceReloadSolrIndexed']) &&
-         strtolower($dataset['forceReloadSolrIndexed']) == 'true')
+      if(isset($dataset['forceReloadSolrIndex']) &&
+         strtolower($dataset['forceReloadSolrIndex']) == 'true')
       {
         $crudCreate->enableSearchIndexationMode();                       
       }
@@ -473,8 +473,8 @@ function defaultConverter($file, $dataset, $setup = array())
       
       $end = microtime_float(); 
       
-      if(isset($dataset['forceReloadSolrIndexed']) &&
-         strtolower($dataset['forceReloadSolrIndexed']) == 'true')
+      if(isset($dataset['forceReloadSolrIndex']) &&
+         strtolower($dataset['forceReloadSolrIndex']) == 'true')
       {      
         cecho('Records created in Solr: ' . round($end - $start, 3) . ' seconds'."\n", 'WHITE');         
       }
@@ -560,8 +560,8 @@ function defaultConverter($file, $dataset, $setup = array())
   // Now check what are the properties and types used in this dataset, check which ones 
   // are existing in the ontology, and report the ones that are not defined in the loaded
   // ontologies.
-  if(!isset($dataset['forceReloadSolrIndexed']) ||
-     strtolower($dataset['forceReloadSolrIndexed']) == 'false')
+  if(!isset($dataset['forceReloadSolrIndex']) ||
+     strtolower($dataset['forceReloadSolrIndex']) == 'false')
   {  
     $usedProperties = array();
     $usedTypes = array();

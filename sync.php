@@ -14,6 +14,11 @@
   
   */
 
+  if(PHP_SAPI != 'cli')
+  {
+    die('This is a shell application, so make sure to run this application in your terminal.');
+  }  
+  
   // Reading the INI file to synch all setuped datasets
   
   /*
@@ -30,9 +35,8 @@
     )
    
    */
-
   $setup = parse_ini_file(getcwd()."/sync.ini", TRUE);  
-  
+
   // Initiliaze needed resources to run this script
   ini_set("display_errors", "On");
   ini_set("memory_limit",$setup["config"]["memory"]."M");
@@ -52,49 +56,49 @@
   $loader_core_framework = new SplClassLoader('StructuredDynamics\structwsf\framework', "/usr/share/structwsf/");
   $loader_core_framework->register();    
   
-	// Sync all defined datasets
-	foreach($setup as $datasetName => $dataset)
-	{
+  // Sync all defined datasets
+  foreach($setup as $datasetName => $dataset)
+  {
     if($datasetName != "config")                                 
     {
-		  $datasetName = preg_replace("/[^a-zA-Z0-9\-\s]/", "_", $datasetName);
-		  $files = array();
-		  $modifiedFiles = array(); // added or modified files
-		  $hashIndexFile = $setup["config"]["indexesFolder"].$datasetName."hashIndex.md5";
-		  $filesHash = array();
-		  $updateFiles = array(); // array of paths+files to update
-		  $hashFile = "";
-		  $filesUpdated = array();
+      $datasetName = preg_replace("/[^a-zA-Z0-9\-\s]/", "_", $datasetName);
+      $files = array();
+      $modifiedFiles = array(); // added or modified files
+      $hashIndexFile = $setup["config"]["indexesFolder"].$datasetName."hashIndex.md5";
+      $filesHash = array();
+      $updateFiles = array(); // array of paths+files to update
+      $hashFile = "";
+      $filesUpdated = array();
 
-		  // Read the hashIndex file to check if files have been modified
-		  
-		  /*
-		 	  The hash table file has this format:
-		 	  
-		 	  /local/file/path/:md5
-		 	  
-		  */
-		  $hashIndex = @file_get_contents($hashIndexFile);
-		  
-		  if($hashIndex)
-		  {
-			  $hashIndex = explode("\n", $hashIndex);
-			  
-			  foreach($hashIndex as $hashRow)
-			  {
-				  $hash = explode(":", $hashRow);
-				  if($hash[0] != "" && $hash[1] != "")
-				  {
-					  $filesHash[$hash[0]] = $hash[1];
-				  }
-			  }
-			  
-			  // Free memory of the hash index
-			  $hashIndex = NULL;
-		  }
+      // Read the hashIndex file to check if files have been modified
+      
+      /*
+         The hash table file has this format:
+         
+         /local/file/path/:md5
+         
+      */
+      $hashIndex = @file_get_contents($hashIndexFile);
+      
+      if($hashIndex)
+      {
+        $hashIndex = explode("\n", $hashIndex);
+        
+        foreach($hashIndex as $hashRow)
+        {
+          $hash = explode(":", $hashRow);
+          if($hash[0] != "" && $hash[1] != "")
+          {
+            $filesHash[$hash[0]] = $hash[1];
+          }
+        }
+        
+        // Free memory of the hash index
+        $hashIndex = NULL;
+      }
 
-		  // Get all the path+files within all directories of the dataset folder
-		  readDirectory($dataset["datasetLocalPath"], $files);
+      // Get all the path+files within all directories of the dataset folder
+      readDirectory($dataset["datasetLocalPath"], $files);
       
       // Check for a filtering pattern.
       if(isset($dataset["filteredFilesRegex"]))
@@ -176,6 +180,7 @@
           }
           
           $modified = FALSE;
+          
           // Check if the file is new
           if(isset($filesHash[$file]))
           {
@@ -199,8 +204,8 @@
           
           // Mark as modified if forceReloadSolrIndexed or forceReload
           // is specified for this dataset
-          if(strtolower($dataset["forceReload"]) == "true" ||
-             strtolower($dataset["forceReloadSolrIndexed"]) == "true" )
+          if((isset($dataset["forceReload"]) && strtolower($dataset["forceReload"]) == "true") ||
+             (isset($dataset["forceReloadSolrIndex"]) && strtolower($dataset["forceReloadSolrIndexed"])) == "true")
           {
             $modified = TRUE;             
           }
@@ -216,52 +221,92 @@
       // Order files by their timestamp; if not available, then this step doesn't matter
       ksort($updateFiles, SORT_NUMERIC);
 
-		  // Lets re-write the hash index
-		  foreach($filesHash as $filePath => $md5)
-		  {
-			  $hashFile .= $filePath.":".$md5."\n";
-		  }
-		  
-		  // Update all added/modified files
-		  if(count($updateFiles) > 0)
-		  {
-			  include_once($dataset["converterPath"].$dataset["converterScript"]);
-			  
-			  foreach($updateFiles as $key => $updateFile)
-			  {
+      // Lets re-write the hash index
+      foreach($filesHash as $filePath => $md5)
+      {
+        $hashFile .= $filePath.":".$md5."\n";
+      }
+      
+      // Update all added/modified files
+      if(count($updateFiles) > 0)
+      {
+        include_once($dataset["converterPath"].$dataset["converterScript"]);
+        
+        foreach($updateFiles as $key => $updateFile)
+        {
           // Propagate the global setting to the dataset's settings.
           $setup[$datasetName]["structwsfFolder"] = $setup["config"]["structwsfFolder"];
           $setup[$datasetName]["ontologiesStructureFiles"] = $setup["config"]["ontologiesStructureFiles"];
           $setup[$datasetName]["missingVocabulary"] = $setup["config"]["missingVocabulary"];
           
-				  // This is needed in case of name collision; Namespaces are only supported in PHP 6
-				  call_user_func($dataset["converterFunctionName"], $updateFile, $dataset, $setup[$datasetName]);
-				  
+          // This is needed in case of name collision; Namespaces are only supported in PHP 6
+          call_user_func($dataset["converterFunctionName"], $updateFile, $dataset, $setup[$datasetName]);
+          
           echo "File updated: $updateFile\n";  
-			  }
-		  }
-		  
-		  // save the new hash index file
-		  file_put_contents($hashIndexFile, $hashFile);
-	  }
+        }
+      }
+      
+      // save the new hash index file
+      file_put_contents($hashIndexFile, $hashFile);
+    }
   }
 
-	function readDirectory($path, &$files)
-	{
-		$h = opendir($path);
-		
-		if($h)
-		{
-			while ($file = readdir($h)) 
-			{
-				if($file != "." && $file != ".." && strpos($file, "converted") === FALSE)
-				{
-  				array_push($files, array($path."$file", $file));
-				}
-			}
-		
-			closedir($h);
-		}		
+  function readDirectory($path, &$files)
+  {
+    $h = opendir($path);
+    
+    if($h)
+    {
+      while ($file = readdir($h)) 
+      {
+        if($file != "." && $file != ".." && strpos($file, "converted") === FALSE)
+        {
+          array_push($files, array($path."$file", $file));
+        }
+      }
+    
+      closedir($h);
+    }    
   }
+     
+  function cecho($text, $color="NORMAL", $return = FALSE)
+  {
+    $_colors = array(
+      'LIGHT_RED'    => "[1;31m",
+      'LIGHT_GREEN'  => "[1;32m",
+      'YELLOW'       => "[1;33m",
+      'LIGHT_BLUE'   => "[1;34m",
+      'MAGENTA'      => "[1;35m",
+      'LIGHT_CYAN'   => "[1;36m",
+      'WHITE'        => "[1;37m",
+      'NORMAL'       => "[0m",
+      'BLACK'        => "[0;30m",
+      'RED'          => "[0;31m",
+      'GREEN'        => "[0;32m",
+      'BROWN'        => "[0;33m",
+      'BLUE'         => "[0;34m",
+      'CYAN'         => "[0;36m",
+      'BOLD'         => "[1m",
+      'UNDERSCORE'   => "[4m",
+      'REVERSE'      => "[7m",
+    );    
+    
+    $out = $_colors["$color"];
+    
+    if($out == "")
+    { 
+      $out = "[0m"; 
+    }
+    
+    if($return)
+    {
+      return(chr(27)."$out$text".chr(27)."[0m");
+    }
+    else
+    {
+      echo chr(27)."$out$text".chr(27).chr(27)."[0m";
+    }
+  }
+
 
 ?>
