@@ -132,10 +132,10 @@
               $filesHash[$file] = md5_file($file);
             }
             
-            // Mark as modified if forceReloadSolrIndexed or forceReload
+            // Mark as modified if forceReloadSolrIndex or forceReload
             // is specified for this dataset
             if(strtolower($dataset["forceReload"]) == "true" ||
-               strtolower($dataset["forceReloadSolrIndexed"]) == "true" )
+               strtolower($dataset["forceReloadSolrIndex"]) == "true" )
             {
               $modified = TRUE;             
             }
@@ -202,10 +202,10 @@
             $filesHash[$file] = md5_file($file);
           }
           
-          // Mark as modified if forceReloadSolrIndexed or forceReload
+          // Mark as modified if forceReloadSolrIndex or forceReload
           // is specified for this dataset
           if((isset($dataset["forceReload"]) && strtolower($dataset["forceReload"]) == "true") ||
-             (isset($dataset["forceReloadSolrIndex"]) && strtolower($dataset["forceReloadSolrIndexed"])) == "true")
+             (isset($dataset["forceReloadSolrIndex"]) && strtolower($dataset["forceReloadSolrIndex"])) == "true")
           {
             $modified = TRUE;             
           }
@@ -242,7 +242,7 @@
           // This is needed in case of name collision; Namespaces are only supported in PHP 6
           call_user_func($dataset["converterFunctionName"], $updateFile, $dataset, $setup[$datasetName]);
           
-          echo "File updated: $updateFile\n";  
+          cecho("File updated: $updateFile\n", 'GREEN');  
         }
       }
       
