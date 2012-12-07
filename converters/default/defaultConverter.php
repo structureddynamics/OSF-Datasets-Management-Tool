@@ -80,13 +80,10 @@ function defaultConverter($file, $dataset, $setup = array())
                     
       if(!$datasetCreate->isSuccessful())
       {
-        header("HTTP/1.1 500 Internal server error");   
-        header('Content-type: text/plain');
-             
         $debugFile = md5(time()).'.error';
         file_put_contents('/tmp/'.$debugFile, var_export($datasetCreate, TRUE));
              
-        cecho('Can\'t create the dataset for reloading it. '. $datasetCreate->getStatusMessage() . 
+        @cecho('Can\'t create the dataset for reloading it. '. $datasetCreate->getStatusMessage() . 
              $datasetCreate->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
              
         exit;        
@@ -120,13 +117,10 @@ function defaultConverter($file, $dataset, $setup = array())
              
     if(!$datasetRead->isSuccessful())
     {      
-      header("HTTP/1.1 500 Internal server error");   
-      header('Content-type: text/plain');
-
       $debugFile = md5(time()).'.error';
       file_put_contents('/tmp/'.$debugFile, var_export($datasetRead, TRUE));
       
-      cecho('Can\'t read the dataset for reloading it. '. $datasetRead->getStatusMessage() . 
+      @cecho('Can\'t read the dataset for reloading it. '. $datasetRead->getStatusMessage() . 
            $datasetRead->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
            
       exit;
@@ -146,13 +140,10 @@ function defaultConverter($file, $dataset, $setup = array())
 
       if(!$datasetDelete->isSuccessful())
       {
-        header("HTTP/1.1 500 Internal server error");   
-        header('Content-type: text/plain');
-
         $debugFile = md5(time()).'.error';
         file_put_contents('/tmp/'.$debugFile, var_export($datasetDelete, TRUE));
         
-        cecho('Can\'t delete the dataset for reloading it. '. $datasetDelete->getStatusMessage() . 
+        @cecho('Can\'t delete the dataset for reloading it. '. $datasetDelete->getStatusMessage() . 
              $datasetDelete->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
                 
         exit;
@@ -173,13 +164,10 @@ function defaultConverter($file, $dataset, $setup = array())
                       
         if(!$datasetCreate->isSuccessful())
         {
-          header("HTTP/1.1 500 Internal server error");   
-          header('Content-type: text/plain');
-               
           $debugFile = md5(time()).'.error';
           file_put_contents('/tmp/'.$debugFile, var_export($datasetCreate, TRUE));
                
-          cecho('Can\'t create the dataset for reloading it. '. $datasetCreate->getStatusMessage() . 
+          @cecho('Can\'t create the dataset for reloading it. '. $datasetCreate->getStatusMessage() . 
                $datasetCreate->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
                
           exit;        
@@ -461,13 +449,10 @@ function defaultConverter($file, $dataset, $setup = array())
       
       if(!$crudCreate->isSuccessful())
       {
-        header("HTTP/1.1 500 Internal server error");   
-        header('Content-type: text/plain');   
-             
         $debugFile = md5(time()).'.error';
         file_put_contents('/tmp/'.$debugFile, var_export($crudCreate, TRUE));
              
-        cecho('Can\'t commit (CRUD Create) a slice to the target dataset. '. $crudCreate->getStatusMessage() . 
+        @cecho('Can\'t commit (CRUD Create) a slice to the target dataset. '. $crudCreate->getStatusMessage() . 
              $crudCreate->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
       }
       
@@ -502,13 +487,10 @@ function defaultConverter($file, $dataset, $setup = array())
                  
       if(!$crudUpdate->isSuccessful())
       {
-        header("HTTP/1.1 500 Internal server error");   
-        header('Content-type: text/plain');
-             
         $debugFile = md5(time()).'.error';
         file_put_contents('/tmp/'.$debugFile, var_export($crudUpdate, TRUE));
              
-        cecho('Can\'t commit (CRUD Updates) a slice to the target dataset. '. $crudUpdate->getStatusMessage() . 
+        @cecho('Can\'t commit (CRUD Updates) a slice to the target dataset. '. $crudUpdate->getStatusMessage() . 
              $crudUpdate->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
       }                 
       
@@ -533,13 +515,10 @@ function defaultConverter($file, $dataset, $setup = array())
         
         if(!$crudDelete->isSuccessful())
         {
-          header("HTTP/1.1 500 Internal server error");   
-          header('Content-type: text/plain');
-               
           $debugFile = md5(time()).'.error';
           file_put_contents('/tmp/'.$debugFile, var_export($crudDelete, TRUE));
                
-          cecho('Can\'t commit (CRUD Delete) a record to the target dataset. '. $crudDelete->getStatusMessage() . 
+          @cecho('Can\'t commit (CRUD Delete) a record to the target dataset. '. $crudDelete->getStatusMessage() . 
                $crudDelete->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
         }        
       }
