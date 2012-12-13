@@ -42,18 +42,24 @@
   ini_set("memory_limit",$setup["config"]["memory"]."M");
   set_time_limit(65535);
   
-  include_once(rtrim($setup["config"]["structwsfFolder"], "/")."/StructuredDynamics/SplClassLoader.php"); 
+  $structwsfFolder = rtrim($setup["config"]["structwsfFolder"], "/");
+  
+  include_once($structwsfFolder."/StructuredDynamics/SplClassLoader.php"); 
   
   // Load the \ws namespace where all the web service code is 
-  $loader_ws = new SplClassLoader('StructuredDynamics\structwsf\php\api\ws', "/usr/share/structwsf/");
+  $loader_ws = new SplClassLoader('StructuredDynamics\structwsf\php\api\ws', $structwsfFolder);
   $loader_ws->register();
 
   // Load the \framework namespace where all the supporting (utility) code is
-  $loader_framework = new SplClassLoader('StructuredDynamics\structwsf\php\api\framework', "/usr/share/structwsf/");
+  $loader_framework = new SplClassLoader('StructuredDynamics\structwsf\php\api\framework', $structwsfFolder);
   $loader_framework->register();
 
   // Load the \framework namespace where all the supporting (utility) code is
-  $loader_core_framework = new SplClassLoader('StructuredDynamics\structwsf\framework', "/usr/share/structwsf/");
+  $loader_core_framework = new SplClassLoader('StructuredDynamics\structwsf\framework', $structwsfFolder);
+  $loader_core_framework->register();    
+
+  // Load the \framework namespace where all the supporting (utility) code is
+  $loader_core_framework = new SplClassLoader('StructuredDynamics\structwsf\ws\framework', $structwsfFolder);
   $loader_core_framework->register();    
   
   // Sync all defined datasets
