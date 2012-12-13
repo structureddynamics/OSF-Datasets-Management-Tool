@@ -44,23 +44,7 @@
   
   $structwsfFolder = rtrim($setup["config"]["structwsfFolder"], "/");
   
-  include_once($structwsfFolder."/StructuredDynamics/SplClassLoader.php"); 
-  
-  // Load the \ws namespace where all the web service code is 
-  $loader_ws = new SplClassLoader('StructuredDynamics\structwsf\php\api\ws', $structwsfFolder);
-  $loader_ws->register();
-
-  // Load the \framework namespace where all the supporting (utility) code is
-  $loader_framework = new SplClassLoader('StructuredDynamics\structwsf\php\api\framework', $structwsfFolder);
-  $loader_framework->register();
-
-  // Load the \framework namespace where all the supporting (utility) code is
-  $loader_core_framework = new SplClassLoader('StructuredDynamics\structwsf\framework', $structwsfFolder);
-  $loader_core_framework->register();    
-
-  // Load the \framework namespace where all the supporting (utility) code is
-  $loader_core_framework = new SplClassLoader('StructuredDynamics\structwsf\ws\framework', $structwsfFolder);
-  $loader_core_framework->register();    
+  include_once($structwsfFolder."/StructuredDynamics/SplClassLoader.php");   
   
   // Sync all defined datasets
   foreach($setup as $datasetName => $dataset)
