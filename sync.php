@@ -37,6 +37,11 @@
    */
   $setup = parse_ini_file(getcwd()."/sync.ini", TRUE);  
 
+  if(!$setup)
+  {
+    die('An error occured when we tried to parse the sync.ini file. Make sure it is parseable and try again.');
+  }
+  
   // Initiliaze needed resources to run this script
   ini_set("display_errors", "On");
   ini_set("memory_limit",$setup["config"]["memory"]."M");
