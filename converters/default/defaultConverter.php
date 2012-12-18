@@ -80,7 +80,7 @@ function defaultConverter($file, $dataset, $setup = array())
                     
       if(!$datasetCreate->isSuccessful())
       {
-        $debugFile = md5(time()).'.error';
+        $debugFile = md5(microtime()).'.error';
         file_put_contents('/tmp/'.$debugFile, var_export($datasetCreate, TRUE));
              
         @cecho('Can\'t create the dataset for reloading it. '. $datasetCreate->getStatusMessage() . 
@@ -117,7 +117,7 @@ function defaultConverter($file, $dataset, $setup = array())
              
     if(!$datasetRead->isSuccessful())
     {      
-      $debugFile = md5(time()).'.error';
+      $debugFile = md5(microtime()).'.error';
       file_put_contents('/tmp/'.$debugFile, var_export($datasetRead, TRUE));
       
       @cecho('Can\'t read the dataset for reloading it. '. $datasetRead->getStatusMessage() . 
@@ -140,7 +140,7 @@ function defaultConverter($file, $dataset, $setup = array())
 
       if(!$datasetDelete->isSuccessful())
       {
-        $debugFile = md5(time()).'.error';
+        $debugFile = md5(microtime()).'.error';
         file_put_contents('/tmp/'.$debugFile, var_export($datasetDelete, TRUE));
         
         @cecho('Can\'t delete the dataset for reloading it. '. $datasetDelete->getStatusMessage() . 
@@ -164,7 +164,7 @@ function defaultConverter($file, $dataset, $setup = array())
                       
         if(!$datasetCreate->isSuccessful())
         {
-          $debugFile = md5(time()).'.error';
+          $debugFile = md5(microtime()).'.error';
           file_put_contents('/tmp/'.$debugFile, var_export($datasetCreate, TRUE));
                
           @cecho('Can\'t create the dataset for reloading it. '. $datasetCreate->getStatusMessage() . 
@@ -449,7 +449,7 @@ function defaultConverter($file, $dataset, $setup = array())
       
       if(!$crudCreate->isSuccessful())
       {
-        $debugFile = md5(time()).'.error';
+        $debugFile = md5(microtime()).'.error';
         file_put_contents('/tmp/'.$debugFile, var_export($crudCreate, TRUE));
              
         @cecho('Can\'t commit (CRUD Create) a slice to the target dataset. '. $crudCreate->getStatusMessage() . 
@@ -487,7 +487,7 @@ function defaultConverter($file, $dataset, $setup = array())
                  
       if(!$crudUpdate->isSuccessful())
       {
-        $debugFile = md5(time()).'.error';
+        $debugFile = md5(microtime()).'.error';
         file_put_contents('/tmp/'.$debugFile, var_export($crudUpdate, TRUE));
              
         @cecho('Can\'t commit (CRUD Updates) a slice to the target dataset. '. $crudUpdate->getStatusMessage() . 
@@ -515,7 +515,7 @@ function defaultConverter($file, $dataset, $setup = array())
         
         if(!$crudDelete->isSuccessful())
         {
-          $debugFile = md5(time()).'.error';
+          $debugFile = md5(microtime()).'.error';
           file_put_contents('/tmp/'.$debugFile, var_export($crudDelete, TRUE));
                
           @cecho('Can\'t commit (CRUD Delete) a record to the target dataset. '. $crudDelete->getStatusMessage() . 
