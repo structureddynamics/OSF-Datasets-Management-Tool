@@ -62,7 +62,7 @@ function defaultConverter($file, $dataset, $setup = array())
   
   $datasetRead->excludeMeta()
               ->uri($setup["datasetURI"])
-              ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : ''));
+              ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : NULL));
            
   if(!$datasetRead->isSuccessful())
   {      
@@ -76,7 +76,7 @@ function defaultConverter($file, $dataset, $setup = array())
                     ->description((isset($dataset['description']) ? $dataset['description'] : ''))
                     ->title((isset($dataset['title']) ? $dataset['title'] : ''))
                     ->globalPermissions(new CRUDPermission(FALSE, TRUE, FALSE, FALSE))
-                    ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : ''));
+                    ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : NULL));
                     
       if(!$datasetCreate->isSuccessful())
       {
@@ -113,7 +113,7 @@ function defaultConverter($file, $dataset, $setup = array())
     
     $datasetRead->excludeMeta()
                 ->uri($setup["datasetURI"])
-                ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : ''));
+                ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : NULL));
              
     if(!$datasetRead->isSuccessful())
     {      
@@ -136,7 +136,7 @@ function defaultConverter($file, $dataset, $setup = array())
       $datasetDelete = new DatasetDeleteQuery($setup["targetStructWSF"]);
       
       $datasetDelete->uri($setup["datasetURI"])
-                    ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : ''));
+                    ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : NULL));
 
       if(!$datasetDelete->isSuccessful())
       {
@@ -160,7 +160,7 @@ function defaultConverter($file, $dataset, $setup = array())
                       ->description($datasetRecord['description'])
                       ->title($datasetRecord['prefLabel'])
                       ->globalPermissions(new CRUDPermission(FALSE, TRUE, FALSE, FALSE))
-                      ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : ''));
+                      ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : NULL));
                       
         if(!$datasetCreate->isSuccessful())
         {
@@ -445,7 +445,7 @@ function defaultConverter($file, $dataset, $setup = array())
         $crudCreate->enableFullIndexationMode();
       }
                  
-      $crudCreate->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : ''));
+      $crudCreate->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : NULL));
       
       if(!$crudCreate->isSuccessful())
       {
@@ -483,7 +483,7 @@ function defaultConverter($file, $dataset, $setup = array())
                  ->documentMimeIsRdfN3()
                  ->document($crudUpdates)
                  ->registeredIp('self')
-                 ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : ''));
+                 ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : NULL));
                  
       if(!$crudUpdate->isSuccessful())
       {
@@ -511,7 +511,7 @@ function defaultConverter($file, $dataset, $setup = array())
         $crudDelete->dataset($setup["datasetURI"])
                    ->uri($uri)
                    ->registeredIp('self')
-                   ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : ''));
+                   ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : NULL));
         
         if(!$crudDelete->isSuccessful())
         {
