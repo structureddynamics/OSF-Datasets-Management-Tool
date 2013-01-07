@@ -43,7 +43,6 @@
     cecho("                                        full path. If the full path is not specified, the DSF \n", 'WHITE');
     cecho("                                        will try to find it from the current folter.\n", 'WHITE');
     cecho("-n                                      Create a new empty dataset\n", 'WHITE');
-    cecho("-h, --help                              Show this help section\n", 'WHITE');
     cecho("-h, --help                              Show this help section\n\n", 'WHITE');
     cecho("Dataset Creation Options:\n", 'WHITE');
     cecho("--dataset-structwsf=\"[URL]\"           (required) Target structWSF network endpoints URL.\n", 'WHITE');
@@ -353,12 +352,17 @@
     // We are creating a new empty dataset
     $datasetCreate = new DatasetCreateQuery($arguments['dataset-structwsf']);
     
-    $perms = explode(';', $arguments['dataset-perm']);
-    
     $create = FALSE;
     $read = FALSE;
     $update = FALSE;
     $delete = FALSE;
+ 
+    if(!isset($arguments['dataset-perm']))   
+    {
+      $arguments['dataset-perm'] = "True;True;True;True";
+    }
+    
+    $perms = explode(';', $arguments['dataset-perm']);
     
     if(isset($perms[0]) && strtolower($perms[0]) == 'true')
     {
