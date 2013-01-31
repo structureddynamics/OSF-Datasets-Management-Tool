@@ -32,7 +32,8 @@
                                         'dataset-title::',
                                         'dataset-description::',
                                         'dataset-perm::',
-                                        'dataset-queryextension::'));  
+                                        'dataset-queryextension::',
+                                        'dataset-config-id::'));  
   
   // Displaying DSF's help screen if required
   if(isset($arguments['h']) || isset($arguments['help']))
@@ -46,16 +47,19 @@
     cecho("-h, --help                              Show this help section\n\n", 'WHITE');
     cecho("Dataset Creation Options:\n", 'WHITE');
     cecho("--dataset-structwsf=\"[URL]\"           (required) Target structWSF network endpoints URL.\n", 'WHITE');
-    cecho("                                                   Example: 'http://localhost/ws/'\n", 'WHITE');
+    cecho("                                                 Example: 'http://localhost/ws/'\n", 'WHITE');
     cecho("--dataset-uri=\"[URI]\"                 (required) URI of the dataset to create\n", 'WHITE');
     cecho("--dataset-title=\"[TITLE]\"             (required) Title of the new dataset\n", 'WHITE');
     cecho("--dataset-creator=\"[URI]\"             (optional) URI of the creator of this dataset\n", 'WHITE');
     cecho("--dataset-description=\"[DESCRIPTION]\" (optional) Description of the new dataset\n", 'WHITE');
     cecho("--dataset-perm=\"[PERMISSIONS]\"        (optional) Global permissions to use when creating this dataset.\n", 'WHITE');
-    cecho("                                                   Example: 'True;True;True;True'\n", 'WHITE');
+    cecho("                                                 Example: 'True;True;True;True'\n", 'WHITE');
     cecho("--dataset-queryextension=\"[CLASS]\"    (optional) Class of the QueryExtension to use for creating this new dataset.\n", 'WHITE');
-    cecho("                                                   The class should include the full namespace.'\n", 'WHITE');
-    cecho("                                                   Example: 'StructuredDynamics\\structwsf\\framework\\MyQuerierExtension'\n", 'WHITE');
+    cecho("                                                 The class should include the full namespace.'\n", 'WHITE');
+    cecho("                                                 Example: 'StructuredDynamics\\structwsf\\framework\\MyQuerierExtension'\n", 'WHITE');
+    cecho("Configuration File Options:\n", 'WHITE');
+    cecho("--dataset-config-id=\"[ID]\"            (optional) Dataset ID, within the target configuration file,\n", 'WHITE');
+    cecho("                                                   to run for this query\n", 'WHITE');
     die;
   }
 
@@ -155,6 +159,11 @@
   {
     foreach($setup as $datasetName => $dataset)
     {
+      if(isset($arguments['dataset-config-id']) && $arguments['dataset-config-id'] != $datasetName) 
+      {
+        continue;
+      }
+      
       if($datasetName != "config")                                 
       {
         $datasetName = preg_replace("/[^a-zA-Z0-9\-\s]/", "_", $datasetName);
