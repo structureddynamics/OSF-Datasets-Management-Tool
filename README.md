@@ -1,30 +1,30 @@
-structWSF-Dataset-Synchronization-Framework
+structWSF-Datasets-Management-Tool
 ===========================================
 
-The Dataset Synchronization Framework (DSF) is a command line tool used to automatically synchronize datasets with a structWSF network instance. All the datasets are configured in the `sync.ini` file. Each time the DSF command line tool is run, the `sync.ini` file is read and will instruct how and where the datasets should be indexed in the structWSF instance.
+The Datasets Management Tool (DMT) is a command line tool used to manage datasets with a structWSF network instance. All the datasets are configured in the `sync.ini` file. Different operations can be performed related to datasets management.
 
-The Dataset Syncrhonization Framework can handle any size of dataset. If the dataset file is too big, the framework will slice it in multiple slices and will send each slice to the structWSF instance.
+The Datasets Management Tool can handle any size of dataset. If the dataset file is too big, the framework will slice it in multiple slices and will send each slice to the structWSF instance.
 
-Installating & Configuring the Dataset Synchronization Framework
-----------------------------------------------------------------
+Installing & Configuring the Datasets Management Tool
+-----------------------------------------------------
 
-The Dataset Synchronization Framework can easily be installed on your server using the following commands:
+The Datasets Management Tool can easily be installed on your server using the following commands:
 
 ```bash
 
-  wget https://github.com/structureddynamics/structWSF-Dataset-Synchronization-Framework/archive/master.zip
+  wget https://github.com/structureddynamics/structWSF-Datasets-Management-Tool/archive/master.zip
   
   unzip master.zip
   
   rm master.zip
   
-  mv structWSF-Dataset-Synchronization-Framework-master sync
+  mv structWSF-Datasets-Management-Tool-master sync
   
   cd sync
   
 ```
 
-The DSF is using the structWSF-PHP-API library to communicate with any structWSF network instance. If the structWSF-PHP-API is not currently installed on your server, then follow these steps to download and install it on your server instance:
+The DMT is using the structWSF-PHP-API library to communicate with any structWSF network instance. If the structWSF-PHP-API is not currently installed on your server, then follow these steps to download and install it on your server instance:
 
 ```bash
 
@@ -50,7 +50,7 @@ The DSF is using the structWSF-PHP-API library to communicate with any structWSF
 
 ```
 
-Once the DSF and the structWSF-PHP-API are downloaded and properly installed on your server, you then have to configure some key DSF settings. The global DSF configuration options are defined at the top of the `sync.ini` file, under the `[config]` section. Here is the list of options you can configure:
+Once the DMT and the structWSF-PHP-API are downloaded and properly installed on your server, you then have to configure some key DMT settings. The global DMT configuration options are defined at the top of the `sync.ini` file, under the `[config]` section. Here is the list of options you can configure:
 
 *   `structwsfFolder`
 
@@ -88,7 +88,7 @@ Configure the Datasets
 
 All the datasets that have to be synchronized with a structWSF network instance needs to be defined in the `sync.ini` file. A series of required, and optional, configuration options can be defined for each dataset to be imported.
 
-What the DSF does is to read one, or multiple RDF files serialized in XML or in N3, that composes the dataset to index. Each of the dataset file(s) can be in the same folder, or in any other folder configuration. The only thing that needs to be done is to properly configure the `datasetLocalPath` configuration option for each dataset.
+What the DMT does is to read one, or multiple RDF files serialized in XML or in N3, that composes the dataset to index. Each of the dataset file(s) can be in the same folder, or in any other folder configuration. The only thing that needs to be done is to properly configure the `datasetLocalPath` configuration option for each dataset.
 
 Here is an example of such a dataset configuration:
 
@@ -110,7 +110,7 @@ Here is an example of such a dataset configuration:
   creator = "http://foobar.com/user/1"
 ```
 
-The name of the dataset, within the DSF, is `Foo-Dataset`. Each of these names have to be unique within the sync.ini file. What we configure here is information about the dataset, how it should be created and where.
+The name of the dataset, within the DMT, is `Foo-Dataset`. Each of these names have to be unique within the sync.ini file. What we configure here is information about the dataset, how it should be created and where.
 
 Let's take a look at each configuration option that are current available:
 
@@ -177,9 +177,9 @@ Let's take a look at each configuration option that are current available:
 
     > This defines the number of record to send to the CRUD: Create structWSF endpoint at 
       each time. Tweaking this parameter have an impact on the performences for the syncing process
-      along with the required memory to run DSF. Also, if the network to get to the structWSF instance
+      along with the required memory to run DMT. Also, if the network to get to the structWSF instance
       is defined with short timeouts for the connections, then smaller size slices may enable
-      the DSF not to get timeouted.
+      the DMT not to get timeouted.
 
 *   `filteredFiles` - *optional*
 
@@ -198,7 +198,7 @@ Let's take a look at each configuration option that are current available:
     > dataset get deleted, recreated and re-imported into the structWSF instance.
     > This parameter will be considered when: forceReload = "true"
     > IMPORTANT NOTE: this means that all the modifications that haven't been
-    >                 saved in the serialized file used by the DSF will be lost!!
+    >                 saved in the serialized file used by the DMT will be lost!!
 
 *   `forceReloadSolrIndex` - *optional*
 
@@ -230,7 +230,7 @@ Let's take a look at each configuration option that are current available:
 Converters
 ----------
 
-Here is the list of all the data convertion scripts that are currently available in the DSF. All these scripts does use a certain format as input and convert it into RDF+XML or RDF+N3 and index the converted RDF data into the structWSF network instance.
+Here is the list of all the data convertion scripts that are currently available in the DMT. All these scripts does use a certain format as input and convert it into RDF+XML or RDF+N3 and index the converted RDF data into the structWSF network instance.
 
 #### defaultConverter
 
@@ -239,7 +239,7 @@ This converter does index RDF+N3 or RDF+XML data directly into the structWSF net
 Running the Dataset Synchronization Framework
 ---------------------------------------------
 
-Once the DSF is configured, once the dataset files are ready to get indexed, and once the dataset are properly configured into the `sync.ini` configuration file, you are ready to run the DSF command line tool by simply doing this in your shell terminal:
+Once the DMT is configured, once the dataset files are ready to get indexed, and once the dataset are properly configured into the `sync.ini` configuration file, you are ready to run the DMT command line tool by simply doing this in your shell terminal:
 
 ```bash
 
@@ -254,17 +254,17 @@ Create, Update and Delete records within datasets
 
 Sometimes we have to only update the delta(s) between two version of the same data source. This means that some new records may need to be created, a few others may have to be updated and a few more to be deleted from an existing dataset. These operations can easily be done without reloading the entire dataset into structWSF.
 
-When the DSF synchronize a dataset, it does analyze the content that is being indexed into structWSF, one of the analyze step that is performed by the framework is to check if the records that are being synchronized are described using the `http://purl.org/ontology/wsf#crudAction` property with one of the following value:
+When the DMT synchronize a dataset, it does analyze the content that is being indexed into structWSF, one of the analyze step that is performed by the framework is to check if the records that are being synchronized are described using the `http://purl.org/ontology/wsf#crudAction` property with one of the following value:
 
 * create
 * update
 * delete
 
-The `wsf:crudAction` property is used to instruct the DSF to perform different actions depending on the value of the property. If the value is `create`, then this means that the DSF has to create that record in the dataset. If the value is `update`, then this means that the record has to be updated in the dataset. Finally, if the value is `delete`, then this means that the dataset has to be deleted from the dataset.
+The `wsf:crudAction` property is used to instruct the DMT to perform different actions depending on the value of the property. If the value is `create`, then this means that the DMT has to create that record in the dataset. If the value is `update`, then this means that the record has to be updated in the dataset. Finally, if the value is `delete`, then this means that the dataset has to be deleted from the dataset.
 
-If the `wsf:Action` property is not used to define a record, then `create` is assumed by the DSF.
+If the `wsf:Action` property is not used to define a record, then `create` is assumed by the DMT.
 
-This is the machanism that is used to synchronize datasets to structWSF using the DSF. If nothing is specified, then records are simply created.
+This is the machanism that is used to synchronize datasets to structWSF using the DMT. If nothing is specified, then records are simply created.
 
 
 Missing Properties and Classes
