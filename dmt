@@ -1,3 +1,5 @@
+#!/usr/bin/php -q
+
 <?php
 
   use \StructuredDynamics\structwsf\php\api\ws\dataset\create\DatasetCreateQuery;
