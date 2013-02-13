@@ -1,9 +1,11 @@
 <?php
 
   use \StructuredDynamics\structwsf\php\api\ws\dataset\create\DatasetCreateQuery;
+  use \StructuredDynamics\structwsf\php\api\ws\dataset\delete\DatasetDeleteQuery;
   use \StructuredDynamics\structwsf\framework\Namespaces;
   use \StructuredDynamics\structwsf\php\api\framework\CRUDPermission;
 
+  include_once('inc/clt.php');
 
   /*
     
@@ -25,89 +27,84 @@
   }  
   
   // Get commandline options
-  $arguments = getopt('n::h::c:', array('help::', 
-                                        'dataset-structwsf::', 
-                                        'dataset-uri::', 
-                                        'dataset-creator::',
-                                        'dataset-title::',
-                                        'dataset-description::',
-                                        'dataset-perm::',
-                                        'dataset-queryextension::',
-                                        'dataset-config-id::'));  
+  $arguments = getopt('l::d::n::h::c:', array('help::', 
+                                              'structwsf::', 
+                                              'delete::', 
+                                              'uri::', 
+                                              'creator::',
+                                              'title::',
+                                              'description::',
+                                              'perm::',
+                                              'queryextension::',
+                                              'config-id::'));  
   
   // Displaying DSF's help screen if required
   if(isset($arguments['h']) || isset($arguments['help']))
   {
     cecho("Usage: php sync.php [OPTIONS]\n\n\n", 'WHITE');
     cecho("Options:\n", 'WHITE');
-    cecho("-c [FILE]                               Specifies the configuration file to use. Can include the \n", 'WHITE');
-    cecho("                                        full path. If the full path is not specified, the DSF \n", 'WHITE');
-    cecho("                                        will try to find it from the current folter.\n", 'WHITE');
-    cecho("-n                                      Create a new empty dataset\n", 'WHITE');
-    cecho("-h, --help                              Show this help section\n\n", 'WHITE');
+    cecho("-c [FILE]                             Specifies the configuration file to use. Can include the \n", 'WHITE');
+    cecho("                                      full path. If the full path is not specified, the DSF \n", 'WHITE');
+    cecho("                                      will try to find it from the current folder.\n", 'WHITE');
+    cecho("-n                                    Create a new empty dataset\n", 'WHITE');
+    cecho("-d                                    Delete an existing dataset\n", 'WHITE');
+    cecho("-l                                    List all the accessible datasets\n", 'WHITE');
+    cecho("-h, --help                            Show this help section\n\n", 'WHITE');
     cecho("Dataset Creation Options:\n", 'WHITE');
-    cecho("--dataset-structwsf=\"[URL]\"           (required) Target structWSF network endpoints URL.\n", 'WHITE');
+    cecho("--structwsf=\"[URL]\"                   (required) Target structWSF network endpoints URL.\n", 'WHITE');
     cecho("                                                 Example: 'http://localhost/ws/'\n", 'WHITE');
-    cecho("--dataset-uri=\"[URI]\"                 (required) URI of the dataset to create\n", 'WHITE');
-    cecho("--dataset-title=\"[TITLE]\"             (required) Title of the new dataset\n", 'WHITE');
-    cecho("--dataset-creator=\"[URI]\"             (optional) URI of the creator of this dataset\n", 'WHITE');
-    cecho("--dataset-description=\"[DESCRIPTION]\" (optional) Description of the new dataset\n", 'WHITE');
-    cecho("--dataset-perm=\"[PERMISSIONS]\"        (optional) Global permissions to use when creating this dataset.\n", 'WHITE');
+    cecho("--uri=\"[URI]\"                         (required) URI of the dataset to create\n", 'WHITE');
+    cecho("--title=\"[TITLE]\"                     (required) Title of the new dataset\n", 'WHITE');
+    cecho("--creator=\"[URI]\"                     (optional) URI of the creator of this dataset\n", 'WHITE');
+    cecho("--description=\"[DESCRIPTION]\"         (optional) Description of the new dataset\n", 'WHITE');
+    cecho("--perm=\"[PERMISSIONS]\"                (optional) Global permissions to use when creating this dataset.\n", 'WHITE');
     cecho("                                                 Example: 'True;True;True;True'\n", 'WHITE');
-    cecho("--dataset-queryextension=\"[CLASS]\"    (optional) Class of the QueryExtension to use for creating this new dataset.\n", 'WHITE');
+    cecho("--queryextension=\"[CLASS]\"            (optional) Class of the QueryExtension to use for creating this new dataset.\n", 'WHITE');
     cecho("                                                 The class should include the full namespace.'\n", 'WHITE');
     cecho("                                                 Example: 'StructuredDynamics\\structwsf\\framework\\MyQuerierExtension'\n", 'WHITE');
+    cecho("Dataset Deletation Options:\n", 'WHITE');
+    cecho("--structwsf=\"[URL]\"                   (required) Target structWSF network endpoints URL.\n", 'WHITE');
+    cecho("                                                 Example: 'http://localhost/ws/'\n", 'WHITE');
+    cecho("--uri=\"[URI]\"                         (optional) URI of the dataset to create\n\n", 'WHITE');
+    cecho("Dataset Listing Options:\n", 'WHITE');
+    cecho("--structwsf=\"[URL]\"                   (required) Target structWSF network endpoints URL.\n", 'WHITE');
+    cecho("                                                 Example: 'http://localhost/ws/'\n", 'WHITE');
     cecho("Configuration File Options:\n", 'WHITE');
-    cecho("--dataset-config-id=\"[ID]\"            (optional) Dataset ID, within the target configuration file,\n", 'WHITE');
-    cecho("                                                   to run for this query\n", 'WHITE');
-    die;
+    cecho("Configuration File Options:\n", 'WHITE');
+    cecho("--config-id=\"[ID]\"                    (optional) Dataset ID, within the target configuration file,\n", 'WHITE');
+    cecho("                                                 to run for this query\n", 'WHITE');
+    exit;
   }
 
   if(isset($arguments['n']))
   {
     // Make sure the required arguments are defined in the arguments
-    if(empty($arguments['dataset-structwsf']))
+    if(empty($arguments['structwsf']))
     {
-      cecho("Missing the --dataset-structwsf parameter for creating a new dataset.\n", 'RED');  
-      die;
+      cecho("Missing the --structwsf parameter for creating a new dataset.\n", 'RED');  
+      exit;
     }
 
-    if(empty($arguments['dataset-uri']))
+    if(empty($arguments['uri']))
     {
-      cecho("Missing the --dataset-uri parameter for creating a new dataset.\n", 'RED');  
-      die;
+      cecho("Missing the --uri parameter for creating a new dataset.\n", 'RED');  
+      exit;
     }
 
-    if(empty($arguments['dataset-creator']))
+    if(empty($arguments['creator']))
     {
-      cecho("Missing the --dataset-creator parameter for creating a new dataset.\n", 'RED');  
-      die;
+      cecho("Missing the --creator parameter for creating a new dataset.\n", 'RED');  
+      exit;
     }
 
-    if(empty($arguments['dataset-title']))
+    if(empty($arguments['title']))
     {
-      cecho("Missing the --dataset-title parameter for creating a new dataset.\n", 'RED');  
-      die;
+      cecho("Missing the --title parameter for creating a new dataset.\n", 'RED');  
+      exit;
     }
   }
   
   // Reading the INI file to synch all setuped datasets
-  
-  /*
-     Data structure of the INI file:
-     
-    Array
-    (
-        [AuthorClaim] => Array
-            (
-                [datasetURI] =>
-                [datasetLocalPath] => 
-                [converterPath] => 
-            )
-    )
-   
-   */
-   
   $setup = NULL;
   $syncFilePath = '';
   
@@ -142,7 +139,7 @@
   if(!$setup)
   {
     cecho('An error occured when we tried to parse the '.$syncFilePath.' file. Make sure it is parseable and try again.', 'GREEN');  
-    die;
+    exit;
   }
  
   // Initiliaze needed resources to run this script
@@ -153,13 +150,94 @@
   $structwsfFolder = rtrim($setup["config"]["structwsfFolder"], "/");
   
   include_once($structwsfFolder."/StructuredDynamics/SplClassLoader.php");   
+  
+  // The user want to list all the accessible datasets
+  if(isset($arguments['l']))
+  {
+    // Make sure the required arguments are defined in the arguments
+    if(empty($arguments['structwsf']))
+    {
+      cecho("Missing the --structwsf parameter for listing accessible datasets.\n", 'RED');  
+      exit;
+    }    
+    
+    include_once('inc/getDatasets.php');
+    
+    $datasets = getDatasets($arguments['structwsf']);
+    
+    showDatasets($datasets);        
+    
+    exit;
+  }  
+
+  // The user want to delete a dataset
+  if(isset($arguments['d']))
+  {
+    // Make sure the required arguments are defined in the arguments
+    if(empty($arguments['structwsf']))
+    {
+      cecho("Missing the --structwsf parameter for deleting the dataset.\n", 'RED');  
+      
+      exit;
+    } 
+
+    include_once('inc/deleteDataset.php');
+    
+    if(isset($arguments['uri']) && $arguments['uri'] != '')
+    {   
+      cecho("Deleting dataset: ".$arguments['uri']."\n", 'CYAN');
+      
+      $deleted = deleteDataset($arguments['uri'], $arguments['structwsf']);  
+    }
+    else
+    {
+      // Show the list of accessible datasets
+      include_once('inc/getDatasets.php');
+
+      $datasets = getDatasets($arguments['structwsf']);
+      
+      showDatasets($datasets);  
+      
+      $datasetNum = getInput('Which dataset number would you like to delete?');
+      
+      $nb = 0;
+      $yes = FALSE;
+      $dataset = NULL;
+      
+      foreach($datasets as $key => $dset)
+      {
+        $nb++;
+        if($nb == $datasetNum)
+        {
+          $yes = getInput('Are you sure you want to delete the '.$datasets[$key]['label'].'?');
+          $dataset = $datasets[$key];
+          break;
+        }
+      }
+      
+      $yes = filter_var($yes, FILTER_VALIDATE_BOOLEAN, array('flags' => FILTER_NULL_ON_FAILURE));
+      if($yes === NULL)
+      {
+        $yes = FALSE;
+      }      
+      
+      if($yes)
+      {
+        cecho("Deleting dataset: ".$dataset['label']."\n", 'CYAN');
+        
+        $deleted = deleteDataset($dataset['uri'], $arguments['structwsf']);          
+      }
+    }    
+    
+    exit;
+  }    
 
   // We synchronize a series of dataset defined in a synchronization configuration file
   if(!isset($arguments['n']))
   {
     foreach($setup as $datasetName => $dataset)
     {
-      if(isset($arguments['dataset-config-id']) && $arguments['dataset-config-id'] != $datasetName) 
+      if(isset($arguments['config-id']) && $arguments['config-id'] != $datasetName) 
       {
         continue;
       }
@@ -359,19 +437,19 @@
   else
   {
     // We are creating a new empty dataset
-    $datasetCreate = new DatasetCreateQuery($arguments['dataset-structwsf']);
+    $datasetCreate = new DatasetCreateQuery($arguments['structwsf']);
     
     $create = FALSE;
     $read = FALSE;
     $update = FALSE;
     $delete = FALSE;
  
-    if(!isset($arguments['dataset-perm']))   
+    if(!isset($arguments['perm']))   
     {
-      $arguments['dataset-perm'] = "True;True;True;True";
+      $arguments['perm'] = "True;True;True;True";
     }
     
-    $perms = explode(';', $arguments['dataset-perm']);
+    $perms = explode(';', $arguments['perm']);
     
     if(isset($perms[0]) && strtolower($perms[0]) == 'true')
     {
@@ -397,12 +475,12 @@
     
     //new CRUDPermission(FALSE, TRUE, FALSE, FALSE)
     
-    $datasetCreate->creator((isset($arguments['dataset-creator']) ? $arguments['dataset-creator'] : ''))
-                  ->uri($arguments['dataset-uri'])
-                  ->description((isset($arguments['dataset-description']) ? $arguments['dataset-description'] : ''))
-                  ->title((isset($arguments['dataset-title']) ? $arguments['dataset-title'] : ''))
+    $datasetCreate->creator((isset($arguments['creator']) ? $arguments['creator'] : ''))
+                  ->uri($arguments['uri'])
+                  ->description((isset($arguments['description']) ? $arguments['description'] : ''))
+                  ->title((isset($arguments['title']) ? $arguments['title'] : ''))
                   ->globalPermissions($permissions)
-                  ->send((isset($arguments['dataset-queryextension']) ? new $arguments['dataset-queryextension'] : NULL));
+                  ->send((isset($arguments['queryextension']) ? new $arguments['queryextension'] : NULL));
                   
     if(!$datasetCreate->isSuccessful())
     {
@@ -439,45 +517,5 @@
       closedir($h);
     }    
   }
-     
-  function cecho($text, $color="NORMAL", $return = FALSE)
-  {
-    $_colors = array(
-      'LIGHT_RED'    => "[1;31m",
-      'LIGHT_GREEN'  => "[1;32m",
-      'YELLOW'       => "[1;33m",
-      'LIGHT_BLUE'   => "[1;34m",
-      'MAGENTA'      => "[1;35m",
-      'LIGHT_CYAN'   => "[1;36m",
-      'WHITE'        => "[1;37m",
-      'NORMAL'       => "[0m",
-      'BLACK'        => "[0;30m",
-      'RED'          => "[0;31m",
-      'GREEN'        => "[0;32m",
-      'BROWN'        => "[0;33m",
-      'BLUE'         => "[0;34m",
-      'CYAN'         => "[0;36m",
-      'BOLD'         => "[1m",
-      'UNDERSCORE'   => "[4m",
-      'REVERSE'      => "[7m",
-    );    
-    
-    $out = $_colors["$color"];
-    
-    if($out == "")
-    { 
-      $out = "[0m"; 
-    }
-    
-    if($return)
-    {
-      return(chr(27)."$out$text".chr(27)."[0m");
-    }
-    else
-    {
-      echo chr(27)."$out$text".chr(27).chr(27)."[0m";
-    }
-  }
-
 
 ?>
