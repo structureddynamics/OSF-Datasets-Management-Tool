@@ -47,7 +47,7 @@
   // Displaying DSF's help screen if required
   if(isset($arguments['h']) || isset($arguments['help']))
   {
-    cecho("Usage: ./dmt [OPTIONS]\n\n\n", 'WHITE');
+    cecho("Usage: dmt [OPTIONS]\n\n\n", 'WHITE');
     cecho("Options:\n", 'WHITE');
     cecho("-c [FILE]                             Specifies the configuration file to use. Can include the \n", 'WHITE');
     cecho("                                      full path. If the full path is not specified, the DSF \n", 'WHITE');
