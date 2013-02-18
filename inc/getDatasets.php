@@ -56,7 +56,7 @@
       @cecho('Can\'t get accessible datasets. '. $datasetRead->getStatusMessage() . 
              $datasetRead->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
              
-      exit;
+      exit(1);
     }   
   }
   

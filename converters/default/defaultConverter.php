@@ -86,7 +86,7 @@ function defaultConverter($file, $dataset, $setup = array())
         @cecho('Can\'t create the dataset for reloading it. '. $datasetCreate->getStatusMessage() . 
              $datasetCreate->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
              
-        exit;        
+        exit(1);        
       } 
       else
       {
@@ -123,7 +123,7 @@ function defaultConverter($file, $dataset, $setup = array())
       @cecho('Can\'t read the dataset for reloading it. '. $datasetRead->getStatusMessage() . 
            $datasetRead->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
            
-      exit;
+      exit(1);
     }
     else
     {
@@ -146,7 +146,7 @@ function defaultConverter($file, $dataset, $setup = array())
         @cecho('Can\'t delete the dataset for reloading it. '. $datasetDelete->getStatusMessage() . 
              $datasetDelete->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
                 
-        exit;
+        exit(1);
       }
       else
       {
@@ -170,7 +170,7 @@ function defaultConverter($file, $dataset, $setup = array())
           @cecho('Can\'t create the dataset for reloading it. '. $datasetCreate->getStatusMessage() . 
                $datasetCreate->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
                
-          exit;        
+          exit(1);        
         }                      
         else
         {
