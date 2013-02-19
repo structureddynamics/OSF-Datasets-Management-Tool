@@ -76,7 +76,6 @@
     cecho("--structwsf=\"[URL]\"                   (required) Target structWSF network endpoints URL.\n", 'WHITE');
     cecho("                                                 Example: 'http://localhost/ws/'\n", 'WHITE');
     cecho("Configuration File Options:\n", 'WHITE');
-    cecho("Configuration File Options:\n", 'WHITE');
     cecho("--config-id=\"[ID]\"                    (optional) Dataset ID, within the target configuration file,\n", 'WHITE');
     cecho("                                                 to run for this query\n", 'WHITE');
     exit;
