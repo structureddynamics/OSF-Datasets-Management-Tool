@@ -8,45 +8,19 @@ The Datasets Management Tool can handle any size of dataset. If the dataset file
 Installing & Configuring the Datasets Management Tool
 -----------------------------------------------------
 
-The Datasets Management Tool can easily be installed on your server using the following commands:
+The Datasets Management Tool can easily be installed on your server using the [OSF-Installer](https://github.com/structureddynamics/Open-Semantic-Framework-Installer):
 
 ```bash
 
-  wget https://github.com/structureddynamics/structWSF-Datasets-Management-Tool/archive/master.zip
-  
-  unzip master.zip
-  
-  rm master.zip
-  
-  mv structWSF-Datasets-Management-Tool-master sync
-  
-  cd sync
+  ./osf-installer --install-datasets-management-tool -v
   
 ```
 
-The DMT is using the structWSF-PHP-API library to communicate with any structWSF network instance. If the structWSF-PHP-API is not currently installed on your server, then follow these steps to download and install it on your server instance:
+The DMT is using the [structWSF-PHP-API](https://github.com/structureddynamics/structWSF-PHP-API) library to communicate with any structWSF network instance. If the structWSF-PHP-API is not currently installed on your server, then follow these steps to download and install it on your server instance:
 
 ```bash
 
-  cd /usr/share/
-  
-  mkdir structwsf
-  
-  cd structwsf
-  
-  wget https://github.com/structureddynamics/structWSF-PHP-API/archive/master.zip
-  
-  unzip master.zip
-  
-  rm master.zip
-  
-  cd structWSF-PHP-API-master
-  
-  mv * ../
-  
-  cd ..
-   
-  rm -rf structWSF-PHP-API-master
+  ./osf-installer --install-structwsf-php-api -v 
 
 ```
 
