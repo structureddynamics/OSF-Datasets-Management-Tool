@@ -418,10 +418,6 @@ function defaultConverter($file, $dataset, $setup = array())
     
     unset($resultset);
     
-    file_put_contents("/tmp/test-creates.n3", $crudCreates, FILE_APPEND);
-    file_put_contents("/tmp/test-updates.n3", $crudUpdates, FILE_APPEND);
-    file_put_contents("/tmp/test-deletes.n3", $crudDeletes, FILE_APPEND);     
-
     if($crudCreates != "")
     {
       $crudCreates = "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\n".$crudCreates;
