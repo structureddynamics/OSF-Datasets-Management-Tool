@@ -33,25 +33,23 @@
   }  
   
   // Get commandline options
-  $arguments = getopt('l::d::n::h::c:', array('help::', 
-                                              'structwsf::', 
-                                              'delete::', 
-                                              'uri::', 
-                                              'creator::',
-                                              'title::',
-                                              'description::',
-                                              'perm::',
-                                              'queryextension::',
-                                              'config-id::'));  
+  $arguments = getopt('l::d::n::h::s::c:', array('help::', 
+                                                 'structwsf::', 
+                                                 'delete::', 
+                                                 'uri::', 
+                                                 'creator::',
+                                                 'title::',
+                                                 'description::',
+                                                 'perm::',
+                                                 'queryextension::',
+                                                 'config-id::'));  
   
   // Displaying DSF's help screen if required
   if(isset($arguments['h']) || isset($arguments['help']))
   {
     cecho("Usage: dmt [OPTIONS]\n\n\n", 'WHITE');
     cecho("Options:\n", 'WHITE');
-    cecho("-c [FILE]                             Specifies the configuration file to use. Can include the \n", 'WHITE');
-    cecho("                                      full path. If the full path is not specified, the DSF \n", 'WHITE');
-    cecho("                                      will try to find it from the current folder.\n", 'WHITE');
+    cecho("-s                                    Synchronize all the datasets listed in sync.ini\n", 'WHITE');
     cecho("-n                                    Create a new empty dataset\n", 'WHITE');
     cecho("-d                                    Delete an existing dataset\n", 'WHITE');
     cecho("-l                                    List all the accessible datasets\n", 'WHITE');
@@ -76,6 +74,9 @@
     cecho("--structwsf=\"[URL]\"                   (required) Target structWSF network endpoints URL.\n", 'WHITE');
     cecho("                                                 Example: 'http://localhost/ws/'\n", 'WHITE');
     cecho("Configuration File Options:\n", 'WHITE');
+    cecho("-c [FILE]                             Specifies the configuration file to use. Can include the \n", 'WHITE');
+    cecho("                                      full path. If the full path is not specified, the DSF \n", 'WHITE');
+    cecho("                                      will try to find it from the current folder.\n", 'WHITE');
     cecho("--config-id=\"[ID]\"                    (optional) Dataset ID, within the target configuration file,\n", 'WHITE');
     cecho("                                                 to run for this query\n", 'WHITE');
     exit;
@@ -155,7 +156,7 @@
   $structwsfFolder = rtrim($setup["config"]["structwsfFolder"], "/");
   
   include_once($structwsfFolder."/StructuredDynamics/SplClassLoader.php");   
-  
+
   // The user want to list all the accessible datasets
   if(isset($arguments['l']))
   {
@@ -238,7 +239,7 @@
   }    
 
   // We synchronize a series of dataset defined in a synchronization configuration file
-  if(!isset($arguments['n']))
+  if(isset($arguments['s']))
   {
     foreach($setup as $datasetName => $dataset)
     {
@@ -439,7 +440,8 @@
       }
     }
   }
-  else
+
+  if(isset($arguments['n']))
   {
     // We are creating a new empty dataset
     $datasetCreate = new DatasetCreateQuery($arguments['structwsf']);
