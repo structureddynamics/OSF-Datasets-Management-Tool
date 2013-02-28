@@ -10,6 +10,8 @@
                 ->uri('all')
                 ->send();
     
+    var_dump($datasetRead);
+    
     if($datasetRead->isSuccessful())
     {
       $resultset = $datasetRead->getResultset()->getResultset();

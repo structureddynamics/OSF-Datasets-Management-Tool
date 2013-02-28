@@ -210,18 +210,52 @@ Here is the list of all the data convertion scripts that are currently available
 
 This converter does index RDF+N3 or RDF+XML data directly into the structWSF network instance.
 
-Running the Dataset Synchronization Framework
----------------------------------------------
-
-Once the DMT is configured, once the dataset files are ready to get indexed, and once the dataset are properly configured into the `sync.ini` configuration file, you are ready to run the DMT command line tool by simply doing this in your shell terminal:
-
-```bash
-
-  php sync.php
-
+Usage Documentation
+-------------------
 ```
+Usage: dmt [OPTIONS]
 
-Then the datasets will starts to be imported. The process will appears step by step, errors will be reported in red, etc.
+Usage examples:
+    Synchronizing all datasets: dmt -s
+    Synchronizing a single dataset: dmt -s --config-id="My-Dataset-Id-From-Sync.ini"
+    Deleting a dataset: dmt -d --uri="http://.../uri/of/record/to/delete/" --structwsf="http://structwsf-instance.com/ws/"
+    Creating an empty dataset: dmt --title="Foo" -n --uri="http://.../uri/of/record/to/delete/" --structwsf="http://structwsf-instance.com/ws/"
+    List existing datasets: dmt -l --structwsf="http://structwsf-instance.com/ws/"
+
+Options:
+-s                                    Synchronize all the datasets listed in sync.ini
+-n                                    Create a new empty dataset
+-d                                    Delete an existing dataset
+-l                                    List all the accessible datasets
+-h, --help                            Show this help section
+
+Dataset Creation Options:
+--structwsf="[URL]"                   (required) Target structWSF network endpoints URL.
+                                                 Example: 'http://localhost/ws/'
+--uri="[URI]"                         (required) URI of the dataset to create
+--title="[TITLE]"                     (required) Title of the new dataset
+--creator="[URI]"                     (optional) URI of the creator of this dataset
+--description="[DESCRIPTION]"         (optional) Description of the new dataset
+--perm="[PERMISSIONS]"                (optional) Global permissions to use when creating this dataset.
+                                                 Example: 'True;True;True;True'
+--queryextension="[CLASS]"            (optional) Class of the QueryExtension to use for creating this new dataset.
+                                                 The class should include the full namespace.'
+                                                 Example: 'StructuredDynamics\structwsf\framework\MyQuerierExtension'
+Dataset Deletation Options:
+--structwsf="[URL]"                   (required) Target structWSF network endpoints URL.
+                                                 Example: 'http://localhost/ws/'
+--uri="[URI]"                         (optional) URI of the dataset to create
+
+Dataset Listing Options:
+--structwsf="[URL]"                   (required) Target structWSF network endpoints URL.
+                                                 Example: 'http://localhost/ws/'
+Configuration File Options:
+-c [FILE]                             Specifies the configuration file to use. Can include the
+                                      full path. If the full path is not specified, the DSF
+                                      will try to find it from the current folder.
+--config-id="[ID]"                    (optional) Dataset ID, within the target configuration file,
+                                                 to run for this query
+```
 
 Create, Update and Delete records within datasets
 -------------------------------------------------

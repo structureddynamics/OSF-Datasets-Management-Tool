@@ -48,6 +48,12 @@
   if(isset($arguments['h']) || isset($arguments['help']))
   {
     cecho("Usage: dmt [OPTIONS]\n\n\n", 'WHITE');
+    cecho("Usage examples: \n", 'WHITE');
+    cecho("    Synchronizing all datasets: dmt -s\n", 'WHITE');
+    cecho("    Synchronizing a single dataset: dmt -s --config-id=\"My-Dataset-Id-From-Sync.ini\"\n", 'WHITE');
+    cecho("    Deleting a dataset: dmt -d --uri=\"http://.../uri/of/record/to/delete/\" --structwsf=\"http://structwsf-instance.com/ws/\"\n", 'WHITE');
+    cecho("    Creating an empty dataset: dmt --title=\"Foo\" -n --uri=\"http://.../uri/of/record/to/delete/\" --structwsf=\"http://structwsf-instance.com/ws/\"\n", 'WHITE');
+    cecho("    List existing datasets: dmt -l --structwsf=\"http://structwsf-instance.com/ws/\"\n", 'WHITE');
     cecho("Options:\n", 'WHITE');
     cecho("-s                                    Synchronize all the datasets listed in sync.ini\n", 'WHITE');
     cecho("-n                                    Create a new empty dataset\n", 'WHITE');
