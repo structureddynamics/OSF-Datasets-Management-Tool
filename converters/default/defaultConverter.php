@@ -272,13 +272,13 @@ function defaultConverter($file, $dataset, $setup = array())
     $start = microtime_float(); 
     
     $currentSubject = "";
-    $subjectDescription = "";
+    $subjectDescription = "";             
     
-    $network_ini = parse_ini_file(WebService::$network_ini . "network.ini", TRUE);
+    $data_ini = parse_ini_file(WebService::$data_ini . "data.ini", TRUE);
     
     $ch = curl_init();        
 
-    curl_setopt($ch, CURLOPT_URL, $network_ini["network"]["wsf_base_url"].":8890/sparql/");
+    curl_setopt($ch, CURLOPT_URL, $data_ini['triplestore']['host'].":".$data_ini['triplestore']['port']."/sparql/");
     curl_setopt($ch, CURLOPT_HTTPHEADER, array("Accept: application/sparql-results+xml"));
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -552,11 +552,11 @@ function defaultConverter($file, $dataset, $setup = array())
     
     ";
 
-    $network_ini = parse_ini_file(WebService::$network_ini . "network.ini", TRUE);
+    $data_ini = parse_ini_file(WebService::$data_ini . "data.ini", TRUE);
     
     $ch = curl_init();        
 
-    curl_setopt($ch, CURLOPT_URL, $network_ini["network"]["wsf_base_url"].":8890/sparql/");
+    curl_setopt($ch, CURLOPT_URL, $data_ini['triplestore']['host'].":".$data_ini['triplestore']['port']."/sparql/");
     curl_setopt($ch, CURLOPT_HTTPHEADER, array("Accept: application/sparql-results+xml"));
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -600,11 +600,11 @@ function defaultConverter($file, $dataset, $setup = array())
     
     ";
 
-    $network_ini = parse_ini_file(WebService::$network_ini . "network.ini", TRUE);
+    $data_ini = parse_ini_file(WebService::$data_ini . "data.ini", TRUE);
     
     $ch = curl_init();        
 
-    curl_setopt($ch, CURLOPT_URL, $network_ini["network"]["wsf_base_url"].":8890/sparql/");
+    curl_setopt($ch, CURLOPT_URL, $data_ini['triplestore']['host'].":".$data_ini['triplestore']['port']."/sparql/");
     curl_setopt($ch, CURLOPT_HTTPHEADER, array("Accept: application/sparql-results+xml"));
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
