@@ -26,7 +26,7 @@
       $debugFile = md5(microtime()).'.error';
       file_put_contents('/tmp/'.$debugFile, var_export($datasetDelete, TRUE));
            
-      @cecho('Can\'t delete ontology '.$uri.'. '. $datasetDelete->getStatusMessage() . 
+      @cecho('Can\'t delete dataset '.$uri.'. '. $datasetDelete->getStatusMessage() . 
            $datasetDelete->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
            
       return(FALSE);

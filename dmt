@@ -14,7 +14,7 @@
   include_once('inc/clt.php');
 
   /*
-    
+                                                  
     The sync.php script does manage the importation of files on the file system.
     A dataset can be composed of one or multiple files. One or multiple records are defined
     in each file.
@@ -33,16 +33,18 @@
   }  
   
   // Get commandline options
-  $arguments = getopt('l::d::n::h::s::c:', array('help::', 
-                                                 'structwsf::', 
-                                                 'delete::', 
-                                                 'uri::', 
-                                                 'creator::',
-                                                 'title::',
-                                                 'description::',
-                                                 'perm::',
-                                                 'queryextension::',
-                                                 'config-id::'));  
+  $arguments = getopt('e::l::d::n::h::s::c:', array('help::', 
+                                                    'structwsf::', 
+                                                    'delete::', 
+                                                    'uri::', 
+                                                    'creator::',
+                                                    'title::',
+                                                    'description::',
+                                                    'perm::',
+                                                    'queryextension::',
+                                                    'config-id::',
+                                                    'mime::',
+                                                    'file::'));  
   
   // Displaying DSF's help screen if required
   if(isset($arguments['h']) || isset($arguments['help']))
@@ -59,6 +61,7 @@
     cecho("-n                                    Create a new empty dataset\n", 'WHITE');
     cecho("-d                                    Delete an existing dataset\n", 'WHITE');
     cecho("-l                                    List all the accessible datasets\n", 'WHITE');
+    cecho("-e                                    Export a dataset\n", 'WHITE');
     cecho("-h, --help                            Show this help section\n\n", 'WHITE');
     cecho("Dataset Creation Options:\n", 'WHITE');
     cecho("--structwsf=\"[URL]\"                   (required) Target structWSF network endpoints URL.\n", 'WHITE');
@@ -75,6 +78,14 @@
     cecho("Dataset Deletation Options:\n", 'WHITE');
     cecho("--structwsf=\"[URL]\"                   (required) Target structWSF network endpoints URL.\n", 'WHITE');
     cecho("                                                 Example: 'http://localhost/ws/'\n", 'WHITE');
+    cecho("Dataset Export Options:\n", 'WHITE');
+    cecho("--structwsf=\"[URL]\"                   (required) Target structWSF network endpoints URL.\n", 'WHITE');
+    cecho("                                                 Example: 'http://localhost/ws/'\n", 'WHITE');
+    cecho("--file=\"[FILE]\"                       (required) File where to export the dataset.\n", 'WHITE');
+    cecho("                                                 Example: '/tmp/my_exported_dataset.rdf'\n", 'WHITE');
+    cecho("--mime=\"[URL]\"                        (optional) Specify the export format; One of:\n", 'WHITE');
+    cecho("                                                 (a) application/rdf+xml (default)'\n", 'WHITE');
+    cecho("                                                 (b) application/rdf+n3'\n", 'WHITE');
     cecho("--uri=\"[URI]\"                         (optional) URI of the dataset to create\n\n", 'WHITE');
     cecho("Dataset Listing Options:\n", 'WHITE');
     cecho("--structwsf=\"[URL]\"                   (required) Target structWSF network endpoints URL.\n", 'WHITE');
@@ -242,7 +253,94 @@
     }    
     
     exit;
-  }    
+  } 
+  
+  // The user want to export a dataset
+  if(isset($arguments['e']))
+  {
+    // Make sure the required arguments are defined in the arguments
+    if(empty($arguments['structwsf']))
+    {
+      cecho("Missing the --structwsf parameter for exporting the dataset.\n", 'RED');  
+      
+      exit;
+    } 
+    
+    if(empty($arguments['file']))
+    {
+      cecho("Missing the --file parameter for exporting the dataset.\n", 'RED');  
+      
+      exit;
+    }
+    else
+    {
+      // Make sure the file is writable
+      if(!is_writable(dirname($arguments['file'])))
+      {
+        cecho("The file specified in the --file parameter is not writable by the DMT tool.\n", 'RED');  
+        
+        exit;
+      }
+    }  
+    
+    $mime = 'application/rdf+xml';   
+    
+    if(!empty($arguments['mime']))
+    {
+      // Make sure the mime is supported
+      
+      if($arguments['mime'] != 'application/rdf+xml' &&
+         $arguments['mime'] != 'application/rdf+n3')
+      {
+        cecho("The specified mime type is unsupported.\n", 'RED');  
+        
+        exit;
+      }
+      else
+      {
+        $mime = $arguments['mime'];
+      }
+    }
+
+    include_once('inc/exportDataset.php');
+    
+    if(isset($arguments['uri']) && $arguments['uri'] != '')
+    {   
+      cecho("Exporting dataset: ".$arguments['uri']."\n", 'CYAN');
+      
+      $deleted = exportDataset($arguments['uri'], $arguments['structwsf'], $arguments['file'], $mime);  
+    }
+    else
+    {
+      // Show the list of accessible datasets
+      include_once('inc/getDatasets.php');
+
+      $datasets = getDatasets($arguments['structwsf']);
+      
+      showDatasets($datasets);  
+      
+      $datasetNum = getInput('Which dataset number would you like to export?');
+      
+      $nb = 0;
+      $dataset = NULL;
+      
+      foreach($datasets as $key => $dset)
+      {
+        $nb++;
+        if($nb == $datasetNum)
+        {
+          $dataset = $datasets[$key];
+          break;
+        }
+      }
+      
+      cecho("Exporting dataset: ".$dataset['label']."\n", 'CYAN');
+        
+      $exported = exportDataset($dataset['uri'], $arguments['structwsf'], $arguments['file'], $mime);          
+    }    
+    
+    exit;
+  }
 
   // We synchronize a series of dataset defined in a synchronization configuration file
   if(isset($arguments['s']))
