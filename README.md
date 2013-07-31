@@ -215,18 +215,19 @@ Usage Documentation
 ```
 Usage: dmt [OPTIONS]
 
+
 Usage examples:
     Synchronizing all datasets: dmt -s
     Synchronizing a single dataset: dmt -s --config-id="My-Dataset-Id-From-Sync.ini"
     Deleting a dataset: dmt -d --uri="http://.../uri/of/record/to/delete/" --structwsf="http://structwsf-instance.com/ws/"
     Creating an empty dataset: dmt --title="Foo" -n --uri="http://.../uri/of/record/to/delete/" --structwsf="http://structwsf-instance.com/ws/"
     List existing datasets: dmt -l --structwsf="http://structwsf-instance.com/ws/"
-
 Options:
 -s                                    Synchronize all the datasets listed in sync.ini
 -n                                    Create a new empty dataset
 -d                                    Delete an existing dataset
 -l                                    List all the accessible datasets
+-e                                    Export a dataset
 -h, --help                            Show this help section
 
 Dataset Creation Options:
@@ -244,6 +245,14 @@ Dataset Creation Options:
 Dataset Deletation Options:
 --structwsf="[URL]"                   (required) Target structWSF network endpoints URL.
                                                  Example: 'http://localhost/ws/'
+Dataset Export Options:
+--structwsf="[URL]"                   (required) Target structWSF network endpoints URL.
+                                                 Example: 'http://localhost/ws/'
+--file="[FILE]"                       (required) File where to export the dataset.
+                                                 Example: '/tmp/my_exported_dataset.rdf'
+--mime="[URL]"                        (optional) Specify the export format; One of:
+                                                 (a) application/rdf+xml (default)'
+                                                 (b) application/rdf+n3'
 --uri="[URI]"                         (optional) URI of the dataset to create
 
 Dataset Listing Options:
