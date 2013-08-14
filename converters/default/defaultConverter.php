@@ -368,7 +368,18 @@ function defaultConverter($file, $dataset, $setup = array())
       {
         if($otype != "" || $olang != "")
         {
-          $subjectDescription .= "<$s> <$p> \"\"\"".n3Encode($o)."\"\"\" .\n";
+          if($olang != "")
+          {
+            $subjectDescription .= "<$s> <$p> \"\"\"".n3Encode($o)."\"\"\"@$olang .\n";
+          }
+          elseif($otype != 'http://www.w3.org/2001/XMLSchema#string')
+          {
+            $subjectDescription .= "<$s> <$p> \"\"\"".n3Encode($o)."\"\"\"^^<$otype>.\n";
+          }
+          else
+          {
+            $subjectDescription .= "<$s> <$p> \"\"\"".n3Encode($o)."\"\"\" .\n";
+          }
         }
         else
         {
