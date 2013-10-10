@@ -1,18 +1,18 @@
 <?php
 
-  use \StructuredDynamics\structwsf\php\api\ws\dataset\delete\DatasetDeleteQuery;
+  use \StructuredDynamicsosf\php\api\ws\dataset\delete\DatasetDeleteQuery;
 
   /**
-  * Delete a Dataset from a structWSF instance
+  * Delete a Dataset from a OSF Web Service instance
   * 
   * @param mixed $uri URI of the dataset to delete
-  * @param mixed $structwsf URL of the structWSF network
+  * @param mixed $osfWebServices URL of the OSF Web Services network
   * 
   * @return Return FALSE if the dataset couldn't be delete. Return TRUE otherwise.
   */
-  function deleteDataset($uri, $structwsf)
+  function deleteDataset($uri, $osfWebServices)
   {
-    $datasetDelete = new DatasetDeleteQuery($structwsf);
+    $datasetDelete = new DatasetDeleteQuery($osfWebServices);
     
     $datasetDelete->uri($uri)
                   ->send();  

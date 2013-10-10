@@ -2,7 +2,7 @@
   
 /*
   This default converter does check if a file is to be split in multiple chuncks
-  before getting imported into structWSF. The input file has to be in RDF+XML, 
+  before getting imported into the OSF Web Services. The input file has to be in RDF+XML, 
   no actual conversion is performed with this default converter.
   
   Warning: make sure that the folder where you *big* files (hundred of mbytes or gigs)
@@ -10,21 +10,21 @@
            Virtuoso config file.
 */
 
-use \StructuredDynamics\structwsf\ws\framework\DBVirtuoso;
-use \StructuredDynamics\structwsf\ws\framework\WebService;
-use \StructuredDynamics\structwsf\framework\WebServiceQuerier;
-use \StructuredDynamics\structwsf\ws\framework\ClassHierarchy;
-use \StructuredDynamics\structwsf\ws\framework\ClassNode;
-use \StructuredDynamics\structwsf\ws\framework\PropertyHierarchy;
-use \StructuredDynamics\structwsf\ws\framework\propertyNode;
-use \StructuredDynamics\structwsf\php\api\ws\crud\create\CrudCreateQuery;
-use \StructuredDynamics\structwsf\php\api\ws\crud\update\CrudUpdateQuery;
-use \StructuredDynamics\structwsf\php\api\ws\crud\delete\CrudDeleteQuery;
-use \StructuredDynamics\structwsf\php\api\ws\dataset\delete\DatasetDeleteQuery;
-use \StructuredDynamics\structwsf\php\api\ws\dataset\read\DatasetReadQuery;
-use \StructuredDynamics\structwsf\php\api\ws\dataset\create\DatasetCreateQuery;
-use \StructuredDynamics\structwsf\framework\Namespaces;
-use \StructuredDynamics\structwsf\php\api\framework\CRUDPermission;
+use \StructuredDynamicsosf\ws\framework\DBVirtuoso;
+use \StructuredDynamicsosf\ws\framework\WebService;
+use \StructuredDynamics\osf\framework\WebServiceQuerier;
+use \StructuredDynamicsosf\ws\framework\ClassHierarchy;
+use \StructuredDynamicsosf\ws\framework\ClassNode;
+use \StructuredDynamicsosf\ws\framework\PropertyHierarchy;
+use \StructuredDynamicsosf\ws\framework\propertyNode;
+use \StructuredDynamicsosf\php\api\ws\crud\create\CrudCreateQuery;
+use \StructuredDynamicsosf\php\api\ws\crud\update\CrudUpdateQuery;
+use \StructuredDynamicsosf\php\api\ws\crud\delete\CrudDeleteQuery;
+use \StructuredDynamicsosf\php\api\ws\dataset\delete\DatasetDeleteQuery;
+use \StructuredDynamicsosf\php\api\ws\dataset\read\DatasetReadQuery;
+use \StructuredDynamicsosf\php\api\ws\dataset\create\DatasetCreateQuery;
+use \StructuredDynamics\osf\framework\Namespaces;
+use \StructuredDynamicsosf\php\api\framework\CRUDPermission;
 
 
 // Initiliaze needed resources to run this script
@@ -58,25 +58,25 @@ function defaultConverter($file, $dataset, $setup = array())
 
                        
   // Check if the dataset is existing, if it doesn't, we try to create it
-  $datasetRead = new DatasetReadQuery($setup["targetStructWSF"]);
+  $datasetRead = new DatasetReadQuery($setup["targetOSFWebServices"]);
   
   $datasetRead->excludeMeta()
               ->uri($setup["datasetURI"])
-              ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : NULL));
+              ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
            
   if(!$datasetRead->isSuccessful())
   {      
     if($datasetRead->error->id == 'WS-DATASET-READ-304')
     {
       // not existing, so we create it       
-      $datasetCreate = new DatasetCreateQuery($setup["targetStructWSF"]);
+      $datasetCreate = new DatasetCreateQuery($setup["targetOSFWebServices"]);
       
       $datasetCreate->creator((isset($dataset['creator']) ? $dataset['creator'] : ''))
                     ->uri($dataset["datasetURI"])
                     ->description((isset($dataset['description']) ? $dataset['description'] : ''))
                     ->title((isset($dataset['title']) ? $dataset['title'] : ''))
                     ->globalPermissions(new CRUDPermission(FALSE, TRUE, FALSE, FALSE))
-                    ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : NULL));
+                    ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
                     
       if(!$datasetCreate->isSuccessful())
       {
@@ -102,18 +102,18 @@ function defaultConverter($file, $dataset, $setup = array())
     cecho('Reloading dataset in Solr: '.$dataset["datasetURI"]."\n", 'MAGENTA');
   }
                      
-  // If we want to reload the dataset, we first delete it in structWSF
+  // If we want to reload the dataset, we first delete it in the OSF Web Services
   if(isset($dataset['forceReload']) &&
      strtolower($dataset['forceReload']) == 'true')
   {
     cecho('Reloading dataset: '.$dataset["datasetURI"]."\n", 'MAGENTA');
     
     // First we get information about the dataset (creator, title, description, etc)
-    $datasetRead = new DatasetReadQuery($setup["targetStructWSF"]);
+    $datasetRead = new DatasetReadQuery($setup["targetOSFWebServices"]);
     
     $datasetRead->excludeMeta()
                 ->uri($setup["datasetURI"])
-                ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : NULL));
+                ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
              
     if(!$datasetRead->isSuccessful())
     {      
@@ -133,10 +133,10 @@ function defaultConverter($file, $dataset, $setup = array())
       $datasetRecord = $datasetRecord['unspecified'][$setup["datasetURI"]];
       
       // Then we delete it
-      $datasetDelete = new DatasetDeleteQuery($setup["targetStructWSF"]);
+      $datasetDelete = new DatasetDeleteQuery($setup["targetOSFWebServices"]);
       
       $datasetDelete->uri($setup["datasetURI"])
-                    ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : NULL));
+                    ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
 
       if(!$datasetDelete->isSuccessful())
       {
@@ -153,14 +153,14 @@ function defaultConverter($file, $dataset, $setup = array())
         cecho('Dataset deleted: '.$dataset["datasetURI"]."\n", 'MAGENTA');
         
         // Finally we re-create it
-        $datasetCreate = new DatasetCreateQuery($setup["targetStructWSF"]);
+        $datasetCreate = new DatasetCreateQuery($setup["targetOSFWebServices"]);
         
         $datasetCreate->creator($datasetRecord[Namespaces::$dcterms.'creator'][0]['uri'])
                       ->uri($setup["datasetURI"])
                       ->description($datasetRecord['description'])
                       ->title($datasetRecord['prefLabel'])
                       ->globalPermissions(new CRUDPermission(FALSE, TRUE, FALSE, FALSE))
-                      ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : NULL));
+                      ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
                       
         if(!$datasetCreate->isSuccessful())
         {
@@ -435,7 +435,7 @@ function defaultConverter($file, $dataset, $setup = array())
       
       $start = microtime_float(); 
       
-      $crudCreate = new CrudCreateQuery($dataset["targetStructWSF"]);
+      $crudCreate = new CrudCreateQuery($dataset["targetOSFWebServices"]);
       
       $crudCreate->dataset($dataset["datasetURI"])
                  ->documentMimeIsRdfN3()
@@ -452,7 +452,7 @@ function defaultConverter($file, $dataset, $setup = array())
         $crudCreate->enableFullIndexationMode();
       }
                  
-      $crudCreate->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : NULL));
+      $crudCreate->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
       
       if(!$crudCreate->isSuccessful())
       {
@@ -484,13 +484,13 @@ function defaultConverter($file, $dataset, $setup = array())
       
       $start = microtime_float(); 
       
-      $crudUpdate = new CrudUpdateQuery($dataset["targetStructWSF"]);
+      $crudUpdate = new CrudUpdateQuery($dataset["targetOSFWebServices"]);
       
       $crudUpdate->dataset($dataset["datasetURI"])
                  ->documentMimeIsRdfN3()
                  ->document($crudUpdates)
                  ->registeredIp('self')
-                 ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : NULL));
+                 ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
                  
       if(!$crudUpdate->isSuccessful())
       {
@@ -513,12 +513,12 @@ function defaultConverter($file, $dataset, $setup = array())
       $start = microtime_float(); 
       foreach($crudDeletes as $uri)
       {
-        $crudDelete = new CrudDeleteQuery($dataset["targetStructWSF"]);
+        $crudDelete = new CrudDeleteQuery($dataset["targetOSFWebServices"]);
         
         $crudDelete->dataset($setup["datasetURI"])
                    ->uri($uri)
                    ->registeredIp('self')
-                   ->send((isset($dataset['targetStructWSFQueryExtension']) ? new $dataset['targetStructWSFQueryExtension'] : NULL));
+                   ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
         
         if(!$crudDelete->isSuccessful())
         {

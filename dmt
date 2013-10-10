@@ -2,10 +2,10 @@
 
 <?php
 
-  use \StructuredDynamics\structwsf\php\api\ws\dataset\create\DatasetCreateQuery;
-  use \StructuredDynamics\structwsf\php\api\ws\dataset\delete\DatasetDeleteQuery;
-  use \StructuredDynamics\structwsf\framework\Namespaces;
-  use \StructuredDynamics\structwsf\php\api\framework\CRUDPermission;
+  use \StructuredDynamicsosf\php\api\ws\dataset\create\DatasetCreateQuery;
+  use \StructuredDynamicsosf\php\api\ws\dataset\delete\DatasetDeleteQuery;
+  use \StructuredDynamics\osf\framework\Namespaces;
+  use \StructuredDynamicsosf\php\api\framework\CRUDPermission;
 
   // Set the working directory of this script to its home directory. That way, if it is ran from elsewhere,
   // the relative paths will follow.
@@ -34,7 +34,7 @@
   
   // Get commandline options
   $arguments = getopt('e::l::d::n::h::s::c:', array('help::', 
-                                                    'structwsf::', 
+                                                    'osf-web-services::', 
                                                     'delete::', 
                                                     'uri::', 
                                                     'creator::',
@@ -53,9 +53,9 @@
     cecho("Usage examples: \n", 'WHITE');
     cecho("    Synchronizing all datasets: dmt -s\n", 'WHITE');
     cecho("    Synchronizing a single dataset: dmt -s --config-id=\"My-Dataset-Id-From-Sync.ini\"\n", 'WHITE');
-    cecho("    Deleting a dataset: dmt -d --uri=\"http://.../uri/of/record/to/delete/\" --structwsf=\"http://structwsf-instance.com/ws/\"\n", 'WHITE');
-    cecho("    Creating an empty dataset: dmt --title=\"Foo\" -n --uri=\"http://.../uri/of/record/to/delete/\" --structwsf=\"http://structwsf-instance.com/ws/\"\n", 'WHITE');
-    cecho("    List existing datasets: dmt -l --structwsf=\"http://structwsf-instance.com/ws/\"\n", 'WHITE');
+    cecho("    Deleting a dataset: dmt -d --uri=\"http://.../uri/of/record/to/delete/\" --osf-web-services=\"http://osf-web-services-instance.com/ws/\"\n", 'WHITE');
+    cecho("    Creating an empty dataset: dmt --title=\"Foo\" -n --uri=\"http://.../uri/of/record/to/delete/\" --osf-web-services=\"http://osf-web-services-instance.com/ws/\"\n", 'WHITE');
+    cecho("    List existing datasets: dmt -l --osf-web-services=\"http://osf-web-services-instance.com/ws/\"\n", 'WHITE');
     cecho("Options:\n", 'WHITE');
     cecho("-s                                    Synchronize all the datasets listed in sync.ini\n", 'WHITE');
     cecho("-n                                    Create a new empty dataset\n", 'WHITE');
@@ -64,7 +64,7 @@
     cecho("-e                                    Export a dataset\n", 'WHITE');
     cecho("-h, --help                            Show this help section\n\n", 'WHITE');
     cecho("Dataset Creation Options:\n", 'WHITE');
-    cecho("--structwsf=\"[URL]\"                   (required) Target structWSF network endpoints URL.\n", 'WHITE');
+    cecho("--osf-web-services=\"[URL]\"                   (required) Target OSF Web Services endpoints URL.\n", 'WHITE');
     cecho("                                                 Example: 'http://localhost/ws/'\n", 'WHITE');
     cecho("--uri=\"[URI]\"                         (required) URI of the dataset to create\n", 'WHITE');
     cecho("--title=\"[TITLE]\"                     (required) Title of the new dataset\n", 'WHITE');
@@ -74,12 +74,12 @@
     cecho("                                                 Example: 'True;True;True;True'\n", 'WHITE');
     cecho("--queryextension=\"[CLASS]\"            (optional) Class of the QueryExtension to use for creating this new dataset.\n", 'WHITE');
     cecho("                                                 The class should include the full namespace.'\n", 'WHITE');
-    cecho("                                                 Example: 'StructuredDynamics\\structwsf\\framework\\MyQuerierExtension'\n", 'WHITE');
+    cecho("                                                 Example: 'StructuredDynamics\\osf\\framework\\MyQuerierExtension'\n", 'WHITE');
     cecho("Dataset Deletation Options:\n", 'WHITE');
-    cecho("--structwsf=\"[URL]\"                   (required) Target structWSF network endpoints URL.\n", 'WHITE');
+    cecho("--osf-web-services=\"[URL]\"                   (required) Target OSF Web Services endpoints URL.\n", 'WHITE');
     cecho("                                                 Example: 'http://localhost/ws/'\n", 'WHITE');
     cecho("Dataset Export Options:\n", 'WHITE');
-    cecho("--structwsf=\"[URL]\"                   (required) Target structWSF network endpoints URL.\n", 'WHITE');
+    cecho("--osf-web-services=\"[URL]\"                   (required) Target OSF Web Services endpoints URL.\n", 'WHITE');
     cecho("                                                 Example: 'http://localhost/ws/'\n", 'WHITE');
     cecho("--file=\"[FILE]\"                       (required) File where to export the dataset.\n", 'WHITE');
     cecho("                                                 Example: '/tmp/my_exported_dataset.rdf'\n", 'WHITE');
@@ -88,7 +88,7 @@
     cecho("                                                 (b) application/rdf+n3'\n", 'WHITE');
     cecho("--uri=\"[URI]\"                         (optional) URI of the dataset to create\n\n", 'WHITE');
     cecho("Dataset Listing Options:\n", 'WHITE');
-    cecho("--structwsf=\"[URL]\"                   (required) Target structWSF network endpoints URL.\n", 'WHITE');
+    cecho("--osf-web-services=\"[URL]\"                   (required) Target OSF Web Services endpoints URL.\n", 'WHITE');
     cecho("                                                 Example: 'http://localhost/ws/'\n", 'WHITE');
     cecho("Configuration File Options:\n", 'WHITE');
     cecho("-c [FILE]                             Specifies the configuration file to use. Can include the \n", 'WHITE');
@@ -102,9 +102,9 @@
   if(isset($arguments['n']))
   {
     // Make sure the required arguments are defined in the arguments
-    if(empty($arguments['structwsf']))
+    if(empty($arguments['osf-web-services']))
     {
-      cecho("Missing the --structwsf parameter for creating a new dataset.\n", 'RED');  
+      cecho("Missing the --osf-web-services parameter for creating a new dataset.\n", 'RED');  
       exit;
     }
 
@@ -170,23 +170,23 @@
   ini_set("memory_limit", $setup["config"]["memory"]."M");
   set_time_limit(65535);
   
-  $structwsfFolder = rtrim($setup["config"]["structwsfFolder"], "/");
+  $osfWebServicesFolder = rtrim($setup["config"]["osfWebServicesFolder"], "/");
   
-  include_once($structwsfFolder."/StructuredDynamics/SplClassLoader.php");   
+  include_once($osfWebServicesFolder."/StructuredDynamics/SplClassLoader.php");   
 
   // The user want to list all the accessible datasets
   if(isset($arguments['l']))
   {
     // Make sure the required arguments are defined in the arguments
-    if(empty($arguments['structwsf']))
+    if(empty($arguments['osf-web-services']))
     {
-      cecho("Missing the --structwsf parameter for listing accessible datasets.\n", 'RED');  
+      cecho("Missing the --osf-web-services parameter for listing accessible datasets.\n", 'RED');  
       exit;
     }    
     
     include_once('inc/getDatasets.php');
     
-    $datasets = getDatasets($arguments['structwsf']);
+    $datasets = getDatasets($arguments['osf-web-services']);
     
     showDatasets($datasets);        
     
@@ -197,9 +197,9 @@
   if(isset($arguments['d']))
   {
     // Make sure the required arguments are defined in the arguments
-    if(empty($arguments['structwsf']))
+    if(empty($arguments['osf-web-services']))
     {
-      cecho("Missing the --structwsf parameter for deleting the dataset.\n", 'RED');  
+      cecho("Missing the --osf-web-services parameter for deleting the dataset.\n", 'RED');  
       
       exit;
     } 
@@ -210,14 +210,14 @@
     {   
       cecho("Deleting dataset: ".$arguments['uri']."\n", 'CYAN');
       
-      $deleted = deleteDataset($arguments['uri'], $arguments['structwsf']);  
+      $deleted = deleteDataset($arguments['uri'], $arguments['osf-web-services']);  
     }
     else
     {
       // Show the list of accessible datasets
       include_once('inc/getDatasets.php');
 
-      $datasets = getDatasets($arguments['structwsf']);
+      $datasets = getDatasets($arguments['osf-web-services']);
       
       showDatasets($datasets);  
       
@@ -248,7 +248,7 @@
       {
         cecho("Deleting dataset: ".$dataset['label']."\n", 'CYAN');
         
-        $deleted = deleteDataset($dataset['uri'], $arguments['structwsf']);          
+        $deleted = deleteDataset($dataset['uri'], $arguments['osf-web-services']);          
       }
     }    
     
@@ -259,9 +259,9 @@
   if(isset($arguments['e']))
   {
     // Make sure the required arguments are defined in the arguments
-    if(empty($arguments['structwsf']))
+    if(empty($arguments['osf-web-services']))
     {
-      cecho("Missing the --structwsf parameter for exporting the dataset.\n", 'RED');  
+      cecho("Missing the --osf-web-services parameter for exporting the dataset.\n", 'RED');  
       
       exit;
     } 
@@ -308,14 +308,14 @@
     {   
       cecho("Exporting dataset: ".$arguments['uri']."\n", 'CYAN');
       
-      $deleted = exportDataset($arguments['uri'], $arguments['structwsf'], $arguments['file'], $mime);  
+      $deleted = exportDataset($arguments['uri'], $arguments['osf-web-services'], $arguments['file'], $mime);  
     }
     else
     {
       // Show the list of accessible datasets
       include_once('inc/getDatasets.php');
 
-      $datasets = getDatasets($arguments['structwsf']);
+      $datasets = getDatasets($arguments['osf-web-services']);
       
       showDatasets($datasets);  
       
@@ -336,7 +336,7 @@
       
       cecho("Exporting dataset: ".$dataset['label']."\n", 'CYAN');
         
-      $exported = exportDataset($dataset['uri'], $arguments['structwsf'], $arguments['file'], $mime);          
+      $exported = exportDataset($dataset['uri'], $arguments['osf-web-services'], $arguments['file'], $mime);          
     }    
     
     exit;
@@ -433,7 +433,7 @@
                 $modified = TRUE;             
               }
               
-              // If the file as been added/modified, we re-index in structWSF
+              // If the file as been added/modified, we re-index in the OSF Web Services
               if($modified)
               {
                 // Check for a date-stamp that we will use for sorting purposes.              
@@ -503,7 +503,7 @@
               $modified = TRUE;             
             }
             
-            // If the file as been added/modified, we re-index in structWSF
+            // If the file as been added/modified, we re-index in the OSF Web Services
             if($modified)
             {
               array_push($updateFiles, $file);
@@ -528,7 +528,7 @@
           foreach($updateFiles as $key => $updateFile)
           {
             // Propagate the global setting to the dataset's settings.
-            $setup[$datasetName]["structwsfFolder"] = $setup["config"]["structwsfFolder"];
+            $setup[$datasetName]["osfWebServicesFolder"] = $setup["config"]["osfWebServicesFolder"];
             $setup[$datasetName]["ontologiesStructureFiles"] = $setup["config"]["ontologiesStructureFiles"];
             $setup[$datasetName]["missingVocabulary"] = $setup["config"]["missingVocabulary"];
             
@@ -548,7 +548,7 @@
   if(isset($arguments['n']))
   {
     // We are creating a new empty dataset
-    $datasetCreate = new DatasetCreateQuery($arguments['structwsf']);
+    $datasetCreate = new DatasetCreateQuery($arguments['osf-web-services']);
     
     $create = FALSE;
     $read = FALSE;

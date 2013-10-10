@@ -1,10 +1,10 @@
 <?php
 
-  use \StructuredDynamics\structwsf\php\api\ws\dataset\read\DatasetReadQuery;
+  use \StructuredDynamicsosf\php\api\ws\dataset\read\DatasetReadQuery;
 
-  function getDatasets($structwsf)
+  function getDatasets($osfWebServices)
   {
-    $datasetRead = new DatasetReadQuery($structwsf);
+    $datasetRead = new DatasetReadQuery($osfWebServices);
     
     $datasetRead->excludeMeta()
                 ->uri('all')

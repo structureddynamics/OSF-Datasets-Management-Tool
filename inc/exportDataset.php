@@ -1,26 +1,26 @@
 <?php
 
-  use \StructuredDynamics\structwsf\php\api\ws\search\SearchQuery;
-  use \StructuredDynamics\structwsf\php\api\ws\crud\read\CrudReadQuery;
+  use \StructuredDynamicsosf\php\api\ws\search\SearchQuery;
+  use \StructuredDynamicsosf\php\api\ws\crud\read\CrudReadQuery;
   
-  use \StructuredDynamics\structwsf\framework\Namespaces;
-  use \StructuredDynamics\structwsf\framework\Resultset;
-  use \StructuredDynamics\structwsf\framework\Subject;
+  use \StructuredDynamics\osf\framework\Namespaces;
+  use \StructuredDynamics\osf\framework\Resultset;
+  use \StructuredDynamics\osf\framework\Subject;
 
   /**
-  * Export a Dataset from a structWSF instance
+  * Export a Dataset from a OSF Web Services instance
   * 
   * @param mixed $uri URI of the dataset to export
-  * @param mixed $structwsf URL of the structWSF network
+  * @param mixed $osfWebServices URL of the OSF Web Services network
   * @param mixed $file File where to export the dataset
   * @param mixed $mime Mime to use for the exported dataset file
   * 
   * @return Return FALSE if the dataset couldn't be exported. Return TRUE otherwise.
   */
-  function exportDataset($uri, $structwsf, $file, $mime)
+  function exportDataset($uri, $osfWebServices, $file, $mime)
   {
     // Get the number of records in that dataset
-    $search = new SearchQuery($structwsf);
+    $search = new SearchQuery($osfWebServices);
     
     $search->includeAggregates()
            ->items(0)
@@ -50,7 +50,7 @@
           {
             cecho('Exporting records '.$i.' to '.($i + $slice)."\n", 'CYAN');
 
-            $searchExport = new SearchQuery($structwsf);
+            $searchExport = new SearchQuery($osfWebServices);
             
             $searchExport->excludeAggregates()
                          ->includeAttribute('uri')
@@ -76,7 +76,7 @@
               }
               
               // Get the full description of the records from the CRUD: Read endpoint
-              $crudRead = new CrudReadQuery($structwsf);
+              $crudRead = new CrudReadQuery($osfWebServices);
               
               $crudRead->dataset($datasets)
                        ->uri($uris)
