@@ -231,7 +231,7 @@ Options:
 -h, --help                            Show this help section
 
 Dataset Creation Options:
---osf-web-services="[URL]"                   (required) Target OSF Web Services network endpoints URL.
+--osf-web-services="[URL]"                   (required) Target OSF Web Services endpoints URL.
                                                  Example: 'http://localhost/ws/'
 --uri="[URI]"                         (required) URI of the dataset to create
 --title="[TITLE]"                     (required) Title of the new dataset
@@ -241,10 +241,10 @@ Dataset Creation Options:
                                                  The class should include the full namespace.'
                                                  Example: 'StructuredDynamics\osf\framework\MyQuerierExtension'
 Dataset Deletation Options:
---osf-web-services="[URL]"                   (required) Target OSF Web Services network endpoints URL.
+--osf-web-services="[URL]"                   (required) Target OSF Web Services endpoints URL.
                                                  Example: 'http://localhost/ws/'
 Dataset Export Options:
---osf-web-services="[URL]"                   (required) Target OSF Web Services network endpoints URL.
+--osf-web-services="[URL]"                   (required) Target OSF Web Services endpoints URL.
                                                  Example: 'http://localhost/ws/'
 --file="[FILE]"                       (required) File where to export the dataset.
                                                  Example: '/tmp/my_exported_dataset.rdf'
@@ -254,7 +254,7 @@ Dataset Export Options:
 --uri="[URI]"                         (optional) URI of the dataset to create
 
 Dataset Listing Options:
---osf-web-services="[URL]"                   (required) Target OSF Web Services network endpoints URL.
+--osf-web-services="[URL]"                   (required) Target OSF Web Services endpoints URL.
                                                  Example: 'http://localhost/ws/'
 Configuration File Options:
 -c [FILE]                             Specifies the configuration file to use. Can include the
