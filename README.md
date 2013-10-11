@@ -237,8 +237,6 @@ Dataset Creation Options:
 --title="[TITLE]"                     (required) Title of the new dataset
 --creator="[URI]"                     (optional) URI of the creator of this dataset
 --description="[DESCRIPTION]"         (optional) Description of the new dataset
---perm="[PERMISSIONS]"                (optional) Global permissions to use when creating this dataset.
-                                                 Example: 'True;True;True;True'
 --queryextension="[CLASS]"            (optional) Class of the QueryExtension to use for creating this new dataset.
                                                  The class should include the full namespace.'
                                                  Example: 'StructuredDynamics\osf\framework\MyQuerierExtension'

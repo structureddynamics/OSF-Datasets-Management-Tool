@@ -24,7 +24,6 @@ use \StructuredDynamicsosf\php\api\ws\dataset\delete\DatasetDeleteQuery;
 use \StructuredDynamicsosf\php\api\ws\dataset\read\DatasetReadQuery;
 use \StructuredDynamicsosf\php\api\ws\dataset\create\DatasetCreateQuery;
 use \StructuredDynamics\osf\framework\Namespaces;
-use \StructuredDynamicsosf\php\api\framework\CRUDPermission;
 
 
 // Initiliaze needed resources to run this script
@@ -83,7 +82,6 @@ function defaultConverter($file, $dataset, $setup = array())
                     ->uri($dataset["datasetURI"])
                     ->description((isset($dataset['description']) ? $dataset['description'] : ''))
                     ->title((isset($dataset['title']) ? $dataset['title'] : ''))
-                    ->globalPermissions(new CRUDPermission(FALSE, TRUE, FALSE, FALSE))
                     ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
                     
       if(!$datasetCreate->isSuccessful())
@@ -167,7 +165,6 @@ function defaultConverter($file, $dataset, $setup = array())
                       ->uri($setup["datasetURI"])
                       ->description($datasetRecord['description'])
                       ->title($datasetRecord['prefLabel'])
-                      ->globalPermissions(new CRUDPermission(FALSE, TRUE, FALSE, FALSE))
                       ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
                       
         if(!$datasetCreate->isSuccessful())

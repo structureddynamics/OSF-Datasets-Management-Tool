@@ -4,7 +4,6 @@
 
   use \StructuredDynamicsosf\php\api\ws\dataset\create\DatasetCreateQuery;
   use \StructuredDynamics\osf\framework\Namespaces;
-  use \StructuredDynamicsosf\php\api\framework\CRUDPermission;
 
   // Set the working directory of this script to its home directory. That way, if it is ran from elsewhere,
   // the relative paths will follow.
@@ -39,7 +38,6 @@
                                                     'creator::',
                                                     'title::',
                                                     'description::',
-                                                    'perm::',
                                                     'queryextension::',
                                                     'config-id::',
                                                     'mime::',
@@ -69,8 +67,6 @@
     cecho("--title=\"[TITLE]\"                     (required) Title of the new dataset\n", 'WHITE');
     cecho("--creator=\"[URI]\"                     (optional) URI of the creator of this dataset\n", 'WHITE');
     cecho("--description=\"[DESCRIPTION]\"         (optional) Description of the new dataset\n", 'WHITE');
-    cecho("--perm=\"[PERMISSIONS]\"                (optional) Global permissions to use when creating this dataset.\n", 'WHITE');
-    cecho("                                                 Example: 'True;True;True;True'\n", 'WHITE');
     cecho("--queryextension=\"[CLASS]\"            (optional) Class of the QueryExtension to use for creating this new dataset.\n", 'WHITE');
     cecho("                                                 The class should include the full namespace.'\n", 'WHITE');
     cecho("                                                 Example: 'StructuredDynamics\\osf\\framework\\MyQuerierExtension'\n", 'WHITE');
@@ -558,47 +554,10 @@
     // We are creating a new empty dataset
     $datasetCreate = new DatasetCreateQuery($arguments['osf-web-services'], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
     
-    $create = FALSE;
-    $read = FALSE;
-    $update = FALSE;
-    $delete = FALSE;
- 
-    if(!isset($arguments['perm']))   
-    {
-      $arguments['perm'] = "True;True;True;True";
-    }
-    
-    $perms = explode(';', $arguments['perm']);
-    
-    if(isset($perms[0]) && strtolower($perms[0]) == 'true')
-    {
-      $create = TRUE;
-    }
-    
-    if(isset($perms[1]) && strtolower($perms[1]) == 'true')
-    {
-      $read = TRUE;
-    }
-    
-    if(isset($perms[2]) && strtolower($perms[2]) == 'true')
-    {
-      $update = TRUE;
-    }
-    
-    if(isset($perms[3]) && strtolower($perms[3]) == 'true')
-    {
-      $delete = TRUE;
-    }
-    
-    $permissions = new CRUDPermission($create, $read, $update, $delete);
-    
-    //new CRUDPermission(FALSE, TRUE, FALSE, FALSE)
-    
     $datasetCreate->creator((isset($arguments['creator']) ? $arguments['creator'] : ''))
                   ->uri($arguments['uri'])
                   ->description((isset($arguments['description']) ? $arguments['description'] : ''))
                   ->title((isset($arguments['title']) ? $arguments['title'] : ''))
-                  ->globalPermissions($permissions)
                   ->send((isset($arguments['queryextension']) ? new $arguments['queryextension'] : NULL));
                   
     if(!$datasetCreate->isSuccessful())
