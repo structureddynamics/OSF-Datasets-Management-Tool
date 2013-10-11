@@ -1,7 +1,7 @@
 <?php
 
-  use \StructuredDynamicsosf\php\api\ws\search\SearchQuery;
-  use \StructuredDynamicsosf\php\api\ws\crud\read\CrudReadQuery;
+  use \StructuredDynamics\osf\php\api\ws\search\SearchQuery;
+  use \StructuredDynamics\osf\php\api\ws\crud\read\CrudReadQuery;
   
   use \StructuredDynamics\osf\framework\Namespaces;
   use \StructuredDynamics\osf\framework\Resultset;

@@ -2,7 +2,10 @@
 
 <?php
 
-  use \StructuredDynamicsosf\php\api\ws\dataset\create\DatasetCreateQuery;
+  use \StructuredDynamics\osf\php\api\ws\dataset\create\DatasetCreateQuery;
+  use \StructuredDynamics\osf\php\api\ws\auth\lister\AuthListerQuery;
+  use \StructuredDynamics\osf\php\api\ws\auth\registrar\access\AuthRegistrarAccessQuery;
+  use \StructuredDynamics\osf\php\api\framework\CRUDPermission;
   use \StructuredDynamics\osf\framework\Namespaces;
 
   // Set the working directory of this script to its home directory. That way, if it is ran from elsewhere,
@@ -36,7 +39,8 @@
                                                     'delete::', 
                                                     'uri::', 
                                                     'creator::',
-                                                    'title::',
+                                                    'group::',
+                                                    'title::',    
                                                     'description::',
                                                     'queryextension::',
                                                     'config-id::',
@@ -65,6 +69,7 @@
     cecho("                                                 Example: 'http://localhost/ws/'\n", 'WHITE');
     cecho("--uri=\"[URI]\"                         (required) URI of the dataset to create\n", 'WHITE');
     cecho("--title=\"[TITLE]\"                     (required) Title of the new dataset\n", 'WHITE');
+    cecho("--group=\"[URI]\"                       (required) URI of the first group that will have access to this dataset\n", 'WHITE');
     cecho("--creator=\"[URI]\"                     (optional) URI of the creator of this dataset\n", 'WHITE');
     cecho("--description=\"[DESCRIPTION]\"         (optional) Description of the new dataset\n", 'WHITE');
     cecho("--queryextension=\"[CLASS]\"            (optional) Class of the QueryExtension to use for creating this new dataset.\n", 'WHITE');
@@ -109,9 +114,9 @@
       exit;
     }
 
-    if(empty($arguments['creator']))
+    if(empty($arguments['group']))
     {
-      cecho("Missing the --creator parameter for creating a new dataset.\n", 'RED');  
+      cecho("Missing the --group parameter for creating a new dataset.\n", 'RED');  
       exit;
     }
 
@@ -190,7 +195,7 @@
     
     include_once('inc/getDatasets.php');
     
-    $datasets = getDatasets($arguments['osf-web-services']);
+    $datasets = getDatasets($credentials);
     
     showDatasets($datasets);        
     
@@ -214,14 +219,14 @@
     {   
       cecho("Deleting dataset: ".$arguments['uri']."\n", 'CYAN');
       
-      $deleted = deleteDataset($arguments['uri'], $arguments['osf-web-services']);  
+      $deleted = deleteDataset($arguments['uri'], $credentials);  
     }
     else
     {
       // Show the list of accessible datasets
       include_once('inc/getDatasets.php');
 
-      $datasets = getDatasets($arguments['osf-web-services']);
+      $datasets = getDatasets($credentials);
       
       showDatasets($datasets);  
       
@@ -252,7 +257,7 @@
       {
         cecho("Deleting dataset: ".$dataset['label']."\n", 'CYAN');
         
-        $deleted = deleteDataset($dataset['uri'], $arguments['osf-web-services']);          
+        $deleted = deleteDataset($dataset['uri'], $credentials);          
       }
     }    
     
@@ -312,14 +317,14 @@
     {   
       cecho("Exporting dataset: ".$arguments['uri']."\n", 'CYAN');
       
-      $deleted = exportDataset($arguments['uri'], $arguments['osf-web-services'], $arguments['file'], $mime);  
+      $deleted = exportDataset($arguments['uri'], $credentials, $arguments['file'], $mime);  
     }
     else
     {
       // Show the list of accessible datasets
       include_once('inc/getDatasets.php');
 
-      $datasets = getDatasets($arguments['osf-web-services']);
+      $datasets = getDatasets($credentials);
       
       showDatasets($datasets);  
       
@@ -340,7 +345,7 @@
       
       cecho("Exporting dataset: ".$dataset['label']."\n", 'CYAN');
         
-      $exported = exportDataset($dataset['uri'], $arguments['osf-web-services'], $arguments['file'], $mime);          
+      $exported = exportDataset($dataset['uri'], $credentials, $arguments['file'], $mime);          
     }    
     
     exit;
@@ -568,14 +573,63 @@
       @cecho('Can\'t create the new dataset. '. $datasetCreate->getStatusMessage() . 
            $datasetCreate->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
            
-      exit;        
+      exit(1);        
     } 
-    else
+
+    // Create the initial access permissions for the input group
+    
+    // Get the list of registered web services
+    $authLister = new AuthListerQuery($arguments['osf-web-services'], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
+    
+    $authLister->getRegisteredWebServiceEndpointsUri()
+               ->mime('resultset')
+               ->send((isset($arguments['queryextension']) ? new $arguments['queryextension'] : NULL));
+    
+    if(!$authLister->isSuccessful())      
     {
-      cecho("Dataset successfully created!\n", 'BLUE');
+      $debugFile = md5(microtime()).'.error';
+      file_put_contents('/tmp/'.$debugFile, var_export($authLister, TRUE));
+           
+      @cecho('Can\'t get the list of registered web services to create the permissions for: '.$arguments['uri'].'. '. $authLister->getStatusMessage() . 
+           $authLister->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
       
-      exit;
+      exit(1);
+    } 
+    
+    $webservices = array();
+    
+    $resultset = $authLister->getResultset()->getResultset();
+    
+    foreach($resultset['unspecified'] as $list)
+    {
+      foreach($list['http://www.w3.org/1999/02/22-rdf-syntax-ns#li'] as $ws)
+      {
+        $webservices[] = $ws['uri'];
+      }
+    }
+    
+    // Register the credentials      
+    $authRegistrarAccess = new AuthRegistrarAccessQuery($arguments['osf-web-services'], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
+    
+    $crudPermissions = new CRUDPermission(TRUE, TRUE, TRUE, TRUE);
+    
+    $authRegistrarAccess->create($arguments['group'], $arguments['uri'], $crudPermissions, $webservices)
+                        ->send((isset($arguments['queryextension']) ? new $arguments['queryextension'] : NULL));
+    
+    if(!$authRegistrarAccess->isSuccessful())      
+    {
+      $debugFile = md5(microtime()).'.error';
+      file_put_contents('/tmp/'.$debugFile, var_export($authRegistrarAccess, TRUE));
+           
+      @cecho('Can\'t create permissions for this new dataset: '.$arguments['uri'].'. '. $authRegistrarAccess->getStatusMessage() . 
+           $authRegistrarAccess->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
+           
+      exit(1);
     }    
+    
+    cecho("Dataset successfully created!\n", 'BLUE');
+    
+    exit;
   }
 
   function readDirectory($path, &$files)

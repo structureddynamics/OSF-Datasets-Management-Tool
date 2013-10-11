@@ -10,19 +10,19 @@
            Virtuoso config file.
 */
 
-use \StructuredDynamicsosf\ws\framework\DBVirtuoso;
-use \StructuredDynamicsosf\ws\framework\WebService;
+use \StructuredDynamics\osf\ws\framework\DBVirtuoso;
+use \StructuredDynamics\osf\ws\framework\WebService;
 use \StructuredDynamics\osf\framework\WebServiceQuerier;
-use \StructuredDynamicsosf\ws\framework\ClassHierarchy;
-use \StructuredDynamicsosf\ws\framework\ClassNode;
-use \StructuredDynamicsosf\ws\framework\PropertyHierarchy;
-use \StructuredDynamicsosf\ws\framework\propertyNode;
-use \StructuredDynamicsosf\php\api\ws\crud\create\CrudCreateQuery;
-use \StructuredDynamicsosf\php\api\ws\crud\update\CrudUpdateQuery;
-use \StructuredDynamicsosf\php\api\ws\crud\delete\CrudDeleteQuery;
-use \StructuredDynamicsosf\php\api\ws\dataset\delete\DatasetDeleteQuery;
-use \StructuredDynamicsosf\php\api\ws\dataset\read\DatasetReadQuery;
-use \StructuredDynamicsosf\php\api\ws\dataset\create\DatasetCreateQuery;
+use \StructuredDynamics\osf\ws\framework\ClassHierarchy;
+use \StructuredDynamics\osf\ws\framework\ClassNode;
+use \StructuredDynamics\osf\ws\framework\PropertyHierarchy;
+use \StructuredDynamics\osf\ws\framework\propertyNode;
+use \StructuredDynamics\osf\php\api\ws\crud\create\CrudCreateQuery;
+use \StructuredDynamics\osf\php\api\ws\crud\update\CrudUpdateQuery;
+use \StructuredDynamics\osf\php\api\ws\crud\delete\CrudDeleteQuery;
+use \StructuredDynamics\osf\php\api\ws\dataset\delete\DatasetDeleteQuery;
+use \StructuredDynamics\osf\php\api\ws\dataset\read\DatasetReadQuery;
+use \StructuredDynamics\osf\php\api\ws\dataset\create\DatasetCreateQuery;
 use \StructuredDynamics\osf\framework\Namespaces;
 
 
@@ -67,8 +67,7 @@ function defaultConverter($file, $dataset, $setup = array())
   // Check if the dataset is existing, if it doesn't, we try to create it
   $datasetRead = new DatasetReadQuery($setup["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
   
-  $datasetRead->excludeMeta()
-              ->uri($setup["datasetURI"])
+  $datasetRead->uri($setup["datasetURI"])
               ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
            
   if(!$datasetRead->isSuccessful())
@@ -117,8 +116,7 @@ function defaultConverter($file, $dataset, $setup = array())
     // First we get information about the dataset (creator, title, description, etc)
     $datasetRead = new DatasetReadQuery($setup["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
     
-    $datasetRead->excludeMeta()
-                ->uri($setup["datasetURI"])
+    $datasetRead->uri($setup["datasetURI"])
                 ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
              
     if(!$datasetRead->isSuccessful())

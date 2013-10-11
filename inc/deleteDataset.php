@@ -1,6 +1,6 @@
 <?php
 
-  use \StructuredDynamicsosf\php\api\ws\dataset\delete\DatasetDeleteQuery;
+  use \StructuredDynamics\osf\php\api\ws\dataset\delete\DatasetDeleteQuery;
 
   /**
   * Delete a Dataset from a OSF Web Service instance
