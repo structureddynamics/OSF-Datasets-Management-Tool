@@ -3,7 +3,6 @@
 <?php
 
   use \StructuredDynamicsosf\php\api\ws\dataset\create\DatasetCreateQuery;
-  use \StructuredDynamicsosf\php\api\ws\dataset\delete\DatasetDeleteQuery;
   use \StructuredDynamics\osf\framework\Namespaces;
   use \StructuredDynamicsosf\php\api\framework\CRUDPermission;
 
@@ -57,7 +56,7 @@
     cecho("    Creating an empty dataset: dmt --title=\"Foo\" -n --uri=\"http://.../uri/of/record/to/delete/\" --osf-web-services=\"http://osf-web-services-instance.com/ws/\"\n", 'WHITE');
     cecho("    List existing datasets: dmt -l --osf-web-services=\"http://osf-web-services-instance.com/ws/\"\n", 'WHITE');
     cecho("Options:\n", 'WHITE');
-    cecho("-s                                    Synchronize all the datasets listed in sync.ini\n", 'WHITE');
+    cecho("-s                                    Synchronize all the datasets listed in dmt.ini\n", 'WHITE');
     cecho("-n                                    Create a new empty dataset\n", 'WHITE');
     cecho("-d                                    Delete an existing dataset\n", 'WHITE');
     cecho("-l                                    List all the accessible datasets\n", 'WHITE');
@@ -153,10 +152,10 @@
   }
   else
   {   
-    // The -c argument is not defined, so we try to find the sync.ini file from
+    // The -c argument is not defined, so we try to find the dmt.ini file from
     // the current directory
-    $setup = parse_ini_file(getcwd()."/sync.ini", TRUE);  
-    $syncFilePath = getcwd()."/sync.ini";
+    $setup = parse_ini_file(getcwd()."/dmt.ini", TRUE);  
+    $syncFilePath = getcwd()."/dmt.ini";
   }
 
   if(!$setup)
@@ -164,6 +163,15 @@
     cecho('An error occured when we tried to parse the '.$syncFilePath.' file. Make sure it is parseable and try again.', 'GREEN');  
     exit;
   }
+  
+  // Create credentials array
+  $credentials = array(
+    'osf-web-services' => (isset($arguments['osf-web-services']) ? $arguments['osf-web-services'] : ''),
+    'application-id' => $setup["credentials"]["application-id"],
+    'api-key' => $setup["credentials"]["api-key"],
+    'user' => $setup["credentials"]["user"],
+  );
+  
  
   // Initiliaze needed resources to run this script
   ini_set("display_errors", "On");
@@ -548,7 +556,7 @@
   if(isset($arguments['n']))
   {
     // We are creating a new empty dataset
-    $datasetCreate = new DatasetCreateQuery($arguments['osf-web-services']);
+    $datasetCreate = new DatasetCreateQuery($arguments['osf-web-services'], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
     
     $create = FALSE;
     $read = FALSE;

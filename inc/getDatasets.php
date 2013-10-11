@@ -2,9 +2,9 @@
 
   use \StructuredDynamicsosf\php\api\ws\dataset\read\DatasetReadQuery;
 
-  function getDatasets($osfWebServices)
+  function getDatasets($credentials)
   {
-    $datasetRead = new DatasetReadQuery($osfWebServices);
+    $datasetRead = new DatasetReadQuery($credentials['osf-web-services'], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
     
     $datasetRead->excludeMeta()
                 ->uri('all')

@@ -6,13 +6,12 @@
   * Delete a Dataset from a OSF Web Service instance
   * 
   * @param mixed $uri URI of the dataset to delete
-  * @param mixed $osfWebServices URL of the OSF Web Services network
   * 
   * @return Return FALSE if the dataset couldn't be delete. Return TRUE otherwise.
   */
-  function deleteDataset($uri, $osfWebServices)
+  function deleteDataset($uri, $credentials)
   {
-    $datasetDelete = new DatasetDeleteQuery($osfWebServices);
+    $datasetDelete = new DatasetDeleteQuery($credentials['osf-web-services'], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
     
     $datasetDelete->uri($uri)
                   ->send();  

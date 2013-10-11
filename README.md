@@ -1,7 +1,7 @@
 OSF-Datasets-Management-Tool
 ===========================================
 
-The Datasets Management Tool (DMT) is a command line tool used to manage datasets with a OSF Web Services network instance. All the datasets are configured in the `sync.ini` file. Different operations can be performed related to datasets management.
+The Datasets Management Tool (DMT) is a command line tool used to manage datasets with a OSF Web Services network instance. All the datasets are configured in the `dmt.ini` file. Different operations can be performed related to datasets management.
 
 The Datasets Management Tool can handle any size of dataset. If the dataset file is too big, the framework will slice it in multiple slices and will send each slice to the OSF Web Services instance.
 
@@ -24,7 +24,7 @@ The DMT is using the [OSF-WS-PHP-API](https://github.com/structureddynamics/OSF-
 
 ```
 
-Once the DMT and the OSF-WS-PHP-API are downloaded and properly installed on your server, you then have to configure some key DMT settings. The global DMT configuration options are defined at the top of the `sync.ini` file, under the `[config]` section. Here is the list of options you can configure:
+Once the DMT and the OSF-WS-PHP-API are downloaded and properly installed on your server, you then have to configure some key DMT settings. The global DMT configuration options are defined at the top of the `dmt.ini` file, under the `[config]` section. Here is the list of options you can configure:
 
 *   `osfWebServicesFolder`
 
@@ -60,7 +60,7 @@ Once the DMT and the OSF-WS-PHP-API are downloaded and properly installed on you
 Configure the Datasets
 ----------------------
 
-All the datasets that have to be synchronized with a OSF Web Services network instance needs to be defined in the `sync.ini` file. A series of required, and optional, configuration options can be defined for each dataset to be imported.
+All the datasets that have to be synchronized with a OSF Web Services network instance needs to be defined in the `dmt.ini` file. A series of required, and optional, configuration options can be defined for each dataset to be imported.
 
 What the DMT does is to read one, or multiple RDF files serialized in XML or in N3, that composes the dataset to index. Each of the dataset file(s) can be in the same folder, or in any other folder configuration. The only thing that needs to be done is to properly configure the `datasetLocalPath` configuration option for each dataset.
 
@@ -84,7 +84,7 @@ Here is an example of such a dataset configuration:
   creator = "http://foobar.com/user/1"
 ```
 
-The name of the dataset, within the DMT, is `Foo-Dataset`. Each of these names have to be unique within the sync.ini file. What we configure here is information about the dataset, how it should be created and where.
+The name of the dataset, within the DMT, is `Foo-Dataset`. Each of these names have to be unique within the dmt.ini file. What we configure here is information about the dataset, how it should be created and where.
 
 Let's take a look at each configuration option that are current available:
 
@@ -223,7 +223,7 @@ Usage examples:
     Creating an empty dataset: dmt --title="Foo" -n --uri="http://.../uri/of/record/to/delete/" --osf-web-services="http://osf-web-services-instance.com/ws/"
     List existing datasets: dmt -l --osf-web-services="http://osf-web-services-instance.com/ws/"
 Options:
--s                                    Synchronize all the datasets listed in sync.ini
+-s                                    Synchronize all the datasets listed in dmt.ini
 -n                                    Create a new empty dataset
 -d                                    Delete an existing dataset
 -l                                    List all the accessible datasets

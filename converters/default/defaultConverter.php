@@ -33,6 +33,14 @@ function defaultConverter($file, $dataset, $setup = array())
 {  
   cecho("Importing dataset: ".cecho($setup["datasetURI"], 'UNDERSCORE', TRUE)."\n\n", 'CYAN');
   
+  // Create credentials array
+  $credentials = array(
+    'osf-web-services' => $dataset["targetOSFWebServices"],
+    'application-id' => $setup["credentials"]["application-id"],
+    'api-key' => $setup["credentials"]["api-key"],
+    'user' => $setup["credentials"]["user"],
+  );  
+  
   /*
     We have to split it. The procesure is simple:
     
@@ -51,14 +59,14 @@ function defaultConverter($file, $dataset, $setup = array())
   }
   
   // Create a connection to the triple store
-  $data_ini = parse_ini_file(WebService::$data_ini . "data.ini", TRUE);
+  $osf_ini = parse_ini_file(WebService::$osf_ini . "osf.ini", TRUE);
 
-  $db = new DBVirtuoso($data_ini["triplestore"]["username"], $data_ini["triplestore"]["password"],
-                       $data_ini["triplestore"]["dsn"], $data_ini["triplestore"]["host"]); 
+  $db = new DBVirtuoso($osf_ini["triplestore"]["username"], $osf_ini["triplestore"]["password"],
+                       $osf_ini["triplestore"]["dsn"], $osf_ini["triplestore"]["host"]); 
 
                        
   // Check if the dataset is existing, if it doesn't, we try to create it
-  $datasetRead = new DatasetReadQuery($setup["targetOSFWebServices"]);
+  $datasetRead = new DatasetReadQuery($setup["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
   
   $datasetRead->excludeMeta()
               ->uri($setup["datasetURI"])
@@ -69,7 +77,7 @@ function defaultConverter($file, $dataset, $setup = array())
     if($datasetRead->error->id == 'WS-DATASET-READ-304')
     {
       // not existing, so we create it       
-      $datasetCreate = new DatasetCreateQuery($setup["targetOSFWebServices"]);
+      $datasetCreate = new DatasetCreateQuery($setup["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
       
       $datasetCreate->creator((isset($dataset['creator']) ? $dataset['creator'] : ''))
                     ->uri($dataset["datasetURI"])
@@ -109,7 +117,7 @@ function defaultConverter($file, $dataset, $setup = array())
     cecho('Reloading dataset: '.$dataset["datasetURI"]."\n", 'MAGENTA');
     
     // First we get information about the dataset (creator, title, description, etc)
-    $datasetRead = new DatasetReadQuery($setup["targetOSFWebServices"]);
+    $datasetRead = new DatasetReadQuery($setup["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
     
     $datasetRead->excludeMeta()
                 ->uri($setup["datasetURI"])
@@ -133,7 +141,7 @@ function defaultConverter($file, $dataset, $setup = array())
       $datasetRecord = $datasetRecord['unspecified'][$setup["datasetURI"]];
       
       // Then we delete it
-      $datasetDelete = new DatasetDeleteQuery($setup["targetOSFWebServices"]);
+      $datasetDelete = new DatasetDeleteQuery($setup["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
       
       $datasetDelete->uri($setup["datasetURI"])
                     ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
@@ -153,7 +161,7 @@ function defaultConverter($file, $dataset, $setup = array())
         cecho('Dataset deleted: '.$dataset["datasetURI"]."\n", 'MAGENTA');
         
         // Finally we re-create it
-        $datasetCreate = new DatasetCreateQuery($setup["targetOSFWebServices"]);
+        $datasetCreate = new DatasetCreateQuery($setup["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
         
         $datasetCreate->creator($datasetRecord[Namespaces::$dcterms.'creator'][0]['uri'])
                       ->uri($setup["datasetURI"])
@@ -274,11 +282,11 @@ function defaultConverter($file, $dataset, $setup = array())
     $currentSubject = "";
     $subjectDescription = "";             
     
-    $data_ini = parse_ini_file(WebService::$data_ini . "data.ini", TRUE);
+    $osf_ini = parse_ini_file(WebService::$osf_ini . "osf.ini", TRUE);
     
     $ch = curl_init();        
 
-    curl_setopt($ch, CURLOPT_URL, $data_ini['triplestore']['host'].":".$data_ini['triplestore']['port']."/sparql/");
+    curl_setopt($ch, CURLOPT_URL, $osf_ini['triplestore']['host'].":".$osf_ini['triplestore']['port']."/sparql/");
     curl_setopt($ch, CURLOPT_HTTPHEADER, array("Accept: application/sparql-results+xml"));
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -435,7 +443,7 @@ function defaultConverter($file, $dataset, $setup = array())
       
       $start = microtime_float(); 
       
-      $crudCreate = new CrudCreateQuery($dataset["targetOSFWebServices"]);
+      $crudCreate = new CrudCreateQuery($dataset["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
       
       $crudCreate->dataset($dataset["datasetURI"])
                  ->documentMimeIsRdfN3()
@@ -484,7 +492,7 @@ function defaultConverter($file, $dataset, $setup = array())
       
       $start = microtime_float(); 
       
-      $crudUpdate = new CrudUpdateQuery($dataset["targetOSFWebServices"]);
+      $crudUpdate = new CrudUpdateQuery($dataset["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
       
       $crudUpdate->dataset($dataset["datasetURI"])
                  ->documentMimeIsRdfN3()
@@ -513,7 +521,7 @@ function defaultConverter($file, $dataset, $setup = array())
       $start = microtime_float(); 
       foreach($crudDeletes as $uri)
       {
-        $crudDelete = new CrudDeleteQuery($dataset["targetOSFWebServices"]);
+        $crudDelete = new CrudDeleteQuery($dataset["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
         
         $crudDelete->dataset($setup["datasetURI"])
                    ->uri($uri)
@@ -563,11 +571,11 @@ function defaultConverter($file, $dataset, $setup = array())
     
     ";
 
-    $data_ini = parse_ini_file(WebService::$data_ini . "data.ini", TRUE);
+    $osf_ini = parse_ini_file(WebService::$osf_ini . "osf.ini", TRUE);
     
     $ch = curl_init();        
 
-    curl_setopt($ch, CURLOPT_URL, $data_ini['triplestore']['host'].":".$data_ini['triplestore']['port']."/sparql/");
+    curl_setopt($ch, CURLOPT_URL, $osf_ini['triplestore']['host'].":".$osf_ini['triplestore']['port']."/sparql/");
     curl_setopt($ch, CURLOPT_HTTPHEADER, array("Accept: application/sparql-results+xml"));
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -611,11 +619,11 @@ function defaultConverter($file, $dataset, $setup = array())
     
     ";
 
-    $data_ini = parse_ini_file(WebService::$data_ini . "data.ini", TRUE);
+    $osf_ini = parse_ini_file(WebService::$osf_ini . "osf.ini", TRUE);
     
     $ch = curl_init();        
 
-    curl_setopt($ch, CURLOPT_URL, $data_ini['triplestore']['host'].":".$data_ini['triplestore']['port']."/sparql/");
+    curl_setopt($ch, CURLOPT_URL, $osf_ini['triplestore']['host'].":".$osf_ini['triplestore']['port']."/sparql/");
     curl_setopt($ch, CURLOPT_HTTPHEADER, array("Accept: application/sparql-results+xml"));
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);

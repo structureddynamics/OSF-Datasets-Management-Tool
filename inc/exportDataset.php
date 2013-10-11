@@ -11,16 +11,15 @@
   * Export a Dataset from a OSF Web Services instance
   * 
   * @param mixed $uri URI of the dataset to export
-  * @param mixed $osfWebServices URL of the OSF Web Services network
   * @param mixed $file File where to export the dataset
   * @param mixed $mime Mime to use for the exported dataset file
   * 
   * @return Return FALSE if the dataset couldn't be exported. Return TRUE otherwise.
   */
-  function exportDataset($uri, $osfWebServices, $file, $mime)
+  function exportDataset($uri, $credentials, $file, $mime)
   {
     // Get the number of records in that dataset
-    $search = new SearchQuery($osfWebServices);
+    $search = new SearchQuery($credentials['osf-web-services'], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
     
     $search->includeAggregates()
            ->items(0)
@@ -50,7 +49,7 @@
           {
             cecho('Exporting records '.$i.' to '.($i + $slice)."\n", 'CYAN');
 
-            $searchExport = new SearchQuery($osfWebServices);
+            $searchExport = new SearchQuery($credentials['osf-web-services'], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
             
             $searchExport->excludeAggregates()
                          ->includeAttribute('uri')
@@ -76,7 +75,7 @@
               }
               
               // Get the full description of the records from the CRUD: Read endpoint
-              $crudRead = new CrudReadQuery($osfWebServices);
+              $crudRead = new CrudReadQuery($credentials['osf-web-services'], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
               
               $crudRead->dataset($datasets)
                        ->uri($uris)
