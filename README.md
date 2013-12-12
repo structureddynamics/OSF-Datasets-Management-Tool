@@ -16,7 +16,7 @@ The Datasets Management Tool can easily be installed on your server using the [O
   
 ```
 
-The DMT is using the [OSF-WS-PHP-API](https://github.com/structureddynamics/OSF-WS-PHP-API) library to communicate with any OSF Web Services network instance. If the OSF-WS-PHP-API is not currently installed on your server, then follow these steps to download and install it on your server instance:
+The DMT is using the [OSF Web Services PHP API](https://github.com/structureddynamics/OSF-Web-Services-PHP-API) library to communicate with any OSF Web Services network instance. If the OSF Web Services PHP API is not currently installed on your server, then follow these steps to download and install it on your server instance:
 
 ```bash
 
@@ -24,11 +24,11 @@ The DMT is using the [OSF-WS-PHP-API](https://github.com/structureddynamics/OSF-
 
 ```
 
-Once the DMT and the OSF-WS-PHP-API are downloaded and properly installed on your server, you then have to configure some key DMT settings. The global DMT configuration options are defined at the top of the `dmt.ini` file, under the `[config]` section. Here is the list of options you can configure:
+Once the DMT and the OSF Web Services PHP API are downloaded and properly installed on your server, you then have to configure some key DMT settings. The global DMT configuration options are defined at the top of the `dmt.ini` file, under the `[config]` section. Here is the list of options you can configure:
 
 *   `osfWebServicesFolder`
 
-    > Folder where the OSF-WS-PHP-API is located. This has to be the folder where the 
+    > Folder where the OSF Web Services PHP API is located. This has to be the folder where the 
     > the top "StructuredDynamics" folder appears.
     
 *   `indexesFolder`
