@@ -540,6 +540,7 @@
             $setup[$datasetName]["osfWebServicesFolder"] = $setup["config"]["osfWebServicesFolder"];
             $setup[$datasetName]["ontologiesStructureFiles"] = $setup["config"]["ontologiesStructureFiles"];
             $setup[$datasetName]["missingVocabulary"] = $setup["config"]["missingVocabulary"];
+            $setup[$datasetName]['credentials'] = $setup["credentials"];
             
             // This is needed in case of name collision; Namespaces are only supported in PHP 6
             call_user_func($dataset["converterFunctionName"], $updateFile, $dataset, $setup[$datasetName]);
