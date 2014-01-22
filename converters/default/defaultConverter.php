@@ -442,8 +442,7 @@ function defaultConverter($file, $dataset, $setup = array())
       
       $crudCreate->dataset($dataset["datasetURI"])
                  ->documentMimeIsRdfN3()
-                 ->document($crudCreates)
-                 ->registeredIp('self');
+                 ->document($crudCreates);
                  
       if(isset($dataset['forceReloadSolrIndex']) &&
          strtolower($dataset['forceReloadSolrIndex']) == 'true')
@@ -492,7 +491,6 @@ function defaultConverter($file, $dataset, $setup = array())
       $crudUpdate->dataset($dataset["datasetURI"])
                  ->documentMimeIsRdfN3()
                  ->document($crudUpdates)
-                 ->registeredIp('self')
                  ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
                  
       if(!$crudUpdate->isSuccessful())
@@ -520,7 +518,6 @@ function defaultConverter($file, $dataset, $setup = array())
         
         $crudDelete->dataset($setup["datasetURI"])
                    ->uri($uri)
-                   ->registeredIp('self')
                    ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
         
         if(!$crudDelete->isSuccessful())
