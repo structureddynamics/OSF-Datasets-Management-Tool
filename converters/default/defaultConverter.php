@@ -192,8 +192,31 @@ function defaultConverter($file, $dataset, $setup = array())
     {
       cecho('Dataset description read: '.$dataset["datasetURI"]."\n", 'MAGENTA');
       
+      // Before deleting the dataset, we have to get all the access permissions
+      // defined for any groups for this dataset.
       $datasetRecord = $datasetRead->getResultset()->getResultset();
       $datasetRecord = $datasetRecord['unspecified'][$setup["datasetURI"]];
+      
+      $authLister = new AuthListerQuery($setup["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
+      
+      $authLister->getDatasetUsersAccesses($dataset["datasetURI"])
+                 ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
+
+      if(!$authLister->isSuccessful())
+      {      
+        $debugFile = md5(microtime()).'.error';
+        file_put_contents('/tmp/'.$debugFile, var_export($authLister, TRUE));
+        
+        @cecho('Can\'t get dataset groups accesses permissions. '. $authLister->getStatusMessage() . 
+             $authLister->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
+             
+        exit(1);
+      }                
+      
+      cecho('Dataset accesses read: '.$dataset["datasetURI"]."\n", 'MAGENTA');
+      
+      $accessRecords = $authLister->getResultset()->getResultset();
+      $accessRecords = $accessRecords['unspecified'];
       
       // Then we delete it
       $datasetDelete = new DatasetDeleteQuery($setup["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
@@ -215,7 +238,7 @@ function defaultConverter($file, $dataset, $setup = array())
       {
         cecho('Dataset deleted: '.$dataset["datasetURI"]."\n", 'MAGENTA');
         
-        // Finally we re-create it
+        // Then we re-create it
         $datasetCreate = new DatasetCreateQuery($setup["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
         
         $datasetCreate->creator($datasetRecord[Namespaces::$dcterms.'creator'][0]['uri'])
@@ -236,6 +259,43 @@ function defaultConverter($file, $dataset, $setup = array())
         }                      
         else
         {
+          // Finally we re-create the access permissions that were existing for the dataset 
+          // before it gets deleted.
+          
+          foreach($accessRecords as $accessRecord)
+          {
+            $authRegistrarAccess = new AuthRegistrarAccessQuery($setup["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
+            
+            $create = filter_var($accessRecord['http://purl.org/ontology/wsf#create'][0]['value'], FILTER_VALIDATE_BOOLEAN);
+            $read = filter_var($accessRecord['http://purl.org/ontology/wsf#read'][0]['value'], FILTER_VALIDATE_BOOLEAN);
+            $update = filter_var($accessRecord['http://purl.org/ontology/wsf#update'][0]['value'], FILTER_VALIDATE_BOOLEAN);
+            $delete = filter_var($accessRecord['http://purl.org/ontology/wsf#delete'][0]['value'], FILTER_VALIDATE_BOOLEAN);
+            $group = $accessRecord['http://purl.org/ontology/wsf#groupAccess'][0]['uri'];
+            
+            $webservices = array();
+            
+            foreach($accessRecord['http://purl.org/ontology/wsf#webServiceAccess'] as $ws)
+            {
+              array_push($webservices, $ws['uri']);
+            }
+
+            $crudPermissions = new CRUDPermission($create, $read, $update, $delete);
+            
+            $authRegistrarAccess->create($group, $dataset["datasetURI"], $crudPermissions, $webservices)
+                                ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
+            
+            if(!$authRegistrarAccess->isSuccessful())      
+            {
+              $debugFile = md5(microtime()).'.error';
+              file_put_contents('/tmp/'.$debugFile, var_export($authRegistrarAccess, TRUE));
+                   
+              @cecho('Can\'t create permissions for this reloaded dataset: '.$dataset["datasetURI"].'. '. $authRegistrarAccess->getStatusMessage() . 
+                   $authRegistrarAccess->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
+                   
+              exit(1);
+            }    
+          }
+          
           cecho('Dataset re-created: '.$dataset["datasetURI"]."\n", 'MAGENTA');
         }
       }    
