@@ -24,6 +24,20 @@ The DMT is using the [OSF Web Services PHP API](https://github.com/structureddyn
 
 ```
 
+Updating the Datasets Management Tool
+-------------------------------------
+
+To update the Datasets Management Tool you have to use the [OSF-Installer](https://github.com/structureddynamics/Open-Semantic-Framework-Installer) commandline utility. Then you can easily update it using the following command:
+
+```bash
+
+  ./osf-installer --upgrade-osf-datasets-management-tool="DMT-VERSION" 
+
+```
+
+Using the Datasets Management Tool
+----------------------------------
+
 Once the DMT and the OSF Web Services PHP API are downloaded and properly installed on your server, you then have to configure some key DMT settings. The global DMT configuration options are defined at the top of the `dmt.ini` file, under the `[config]` section. Here is the list of options you can configure:
 
 *   `osfWebServicesFolder`
@@ -82,6 +96,7 @@ Here is an example of such a dataset configuration:
   title = "This is the title of my new dataset"
   description = "This is a description of my new dataset"
   creator = "http://foobar.com/user/1"
+  group = "http://foobar.com/group/administer"
 ```
 
 The name of the dataset, within the DMT, is `Foo-Dataset`. Each of these names have to be unique within the dmt.ini file. What we configure here is information about the dataset, how it should be created and where.
@@ -200,6 +215,12 @@ Let's take a look at each configuration option that are current available:
 
     > This parameter is used to specify the creator's URI to use if the dataset needs to be
     > created by the Dataset Synchronization Framework.
+
+*   `group` - *required*
+
+    > This parameter is used to specify the group's URI to use if the dataset needs to be
+    > created by the Dataset Synchronization Framework. This group will get the initial
+    > full CRUD permissions
 
 Converters
 ----------

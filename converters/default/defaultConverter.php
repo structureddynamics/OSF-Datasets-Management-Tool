@@ -23,6 +23,9 @@ use \StructuredDynamics\osf\php\api\ws\crud\delete\CrudDeleteQuery;
 use \StructuredDynamics\osf\php\api\ws\dataset\delete\DatasetDeleteQuery;
 use \StructuredDynamics\osf\php\api\ws\dataset\read\DatasetReadQuery;
 use \StructuredDynamics\osf\php\api\ws\dataset\create\DatasetCreateQuery;
+use \StructuredDynamics\osf\php\api\ws\auth\lister\AuthListerQuery;
+use \StructuredDynamics\osf\php\api\ws\auth\registrar\access\AuthRegistrarAccessQuery;
+use \StructuredDynamics\osf\php\api\framework\CRUDPermission;
 use \StructuredDynamics\osf\framework\Namespaces;
 
 
@@ -69,6 +72,8 @@ function defaultConverter($file, $dataset, $setup = array())
   
   $datasetRead->uri($setup["datasetURI"])
               ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
+  
+  $newDataset = FALSE;
            
   if(!$datasetRead->isSuccessful())
   {      
@@ -95,7 +100,60 @@ function defaultConverter($file, $dataset, $setup = array())
       } 
       else
       {
-        cecho('Dataset not existing, creating it: '.$dataset["datasetURI"]."\n", 'MAGENTA');
+        // Create the initial access permissions for the input group
+
+        // Get the list of registered web services
+        $authLister = new AuthListerQuery($setup["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
+        
+        $authLister->getRegisteredWebServiceEndpointsUri()
+                   ->mime('resultset')
+                   ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
+        
+        if(!$authLister->isSuccessful())      
+        {
+          $debugFile = md5(microtime()).'.error';
+          file_put_contents('/tmp/'.$debugFile, var_export($authLister, TRUE));
+               
+          @cecho('Can\'t get the list of registered web services to create the permissions for: '.$dataset["datasetURI"].'. '. $authLister->getStatusMessage() . 
+               $authLister->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
+          
+          exit(1);
+        } 
+        
+        $webservices = array();
+        
+        $resultset = $authLister->getResultset()->getResultset();
+        
+        foreach($resultset['unspecified'] as $list)
+        {
+          foreach($list['http://www.w3.org/1999/02/22-rdf-syntax-ns#li'] as $ws)
+          {
+            $webservices[] = $ws['uri'];
+          }
+        }
+        
+        // Register the credentials      
+        $authRegistrarAccess = new AuthRegistrarAccessQuery($setup["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
+        
+        $crudPermissions = new CRUDPermission(TRUE, TRUE, TRUE, TRUE);
+        
+        $authRegistrarAccess->create($dataset['group'], $dataset["datasetURI"], $crudPermissions, $webservices)
+                            ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
+        
+        if(!$authRegistrarAccess->isSuccessful())      
+        {
+          $debugFile = md5(microtime()).'.error';
+          file_put_contents('/tmp/'.$debugFile, var_export($authRegistrarAccess, TRUE));
+               
+          @cecho('Can\'t create permissions for this new dataset: '.$dataset["datasetURI"].'. '. $authRegistrarAccess->getStatusMessage() . 
+               $authRegistrarAccess->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
+               
+          exit(1);
+        }                 
+        
+        $newDataset = TRUE;
+        
+        cecho('Dataset not existing, successfully created: '.$dataset["datasetURI"]."\n", 'MAGENTA');
       }
     }
   }
@@ -109,7 +167,8 @@ function defaultConverter($file, $dataset, $setup = array())
                      
   // If we want to reload the dataset, we first delete it in the OSF Web Services
   if(isset($dataset['forceReload']) &&
-     strtolower($dataset['forceReload']) == 'true')
+     strtolower($dataset['forceReload']) == 'true' &&
+     $newDataset === FALSE)
   {
     cecho('Reloading dataset: '.$dataset["datasetURI"]."\n", 'MAGENTA');
     
@@ -187,7 +246,8 @@ function defaultConverter($file, $dataset, $setup = array())
 
   // Start by deleting the import graph that may have been left over.
   if(!isset($dataset['forceReloadSolrIndex']) ||
-     strtolower($dataset['forceReloadSolrIndex']) == 'false')
+     strtolower($dataset['forceReloadSolrIndex']) == 'false' &&
+     $newDataset === FALSE)
   {
     $sqlQuery = "sparql clear graph <".$importDataset.">";
     
