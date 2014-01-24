@@ -361,7 +361,7 @@
         continue;
       }
       
-      if($datasetName != "config")                                 
+      if($datasetName != "config" && $datasetName != "credentials")                                 
       {
         $datasetName = preg_replace("/[^a-zA-Z0-9\-\s]/", "_", $datasetName);
         $files = array();
