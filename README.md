@@ -35,8 +35,8 @@ To update the Datasets Management Tool you have to use the [OSF-Installer](https
 
 ```
 
-Using the Datasets Management Tool
-----------------------------------
+Configuring the Datasets Management Tool
+----------------------------------------
 
 Once the DMT and the OSF Web Services PHP API are downloaded and properly installed on your server, you then have to configure some key DMT settings. The global DMT configuration options are defined at the top of the `dmt.ini` file, under the `[config]` section. Here is the list of options you can configure:
 
