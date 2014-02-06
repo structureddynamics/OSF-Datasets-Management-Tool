@@ -199,7 +199,7 @@ function defaultConverter($file, $dataset, $setup = array())
       
       $authLister = new AuthListerQuery($setup["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
       
-      $authLister->getDatasetUsersAccesses($dataset["datasetURI"])
+      $authLister->getDatasetGroupsAccesses($dataset["datasetURI"])
                  ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
 
       if(!$authLister->isSuccessful())
@@ -308,7 +308,7 @@ function defaultConverter($file, $dataset, $setup = array())
   if(!isset($dataset['forceReloadSolrIndex']) ||
      strtolower($dataset['forceReloadSolrIndex']) == 'false' &&
      $newDataset === FALSE)
-  {
+  { 
     $sqlQuery = "sparql clear graph <".$importDataset.">";
     
     $resultset = $db->query($sqlQuery);
@@ -341,7 +341,7 @@ function defaultConverter($file, $dataset, $setup = array())
       return;
     }    
     
-    unset($resultset);     
+    unset($resultset);   
   }
 
   // count the number of records
@@ -402,64 +402,60 @@ function defaultConverter($file, $dataset, $setup = array())
     $ch = curl_init();        
 
     curl_setopt($ch, CURLOPT_URL, $osf_ini['triplestore']['host'].":".$osf_ini['triplestore']['port']."/sparql/");
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array("Accept: application/sparql-results+xml"));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array("Accept: application/sparql-results+json", "Accept-Charset: utf-8"));
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, "default-graph-uri=".urlencode($importDataset)."&query=".urlencode($sparqlQuery)."&format=".urlencode("application/sparql-results+xml")."&debug=on");      
+    curl_setopt($ch, CURLOPT_POSTFIELDS, "default-graph-uri=".urlencode($importDataset)."&query=".urlencode($sparqlQuery)."&format=".urlencode("application/sparql-results+json")."&debug=on");      
     curl_setopt($ch, CURLOPT_HEADER, TRUE);            
     
-    $xml_data = curl_exec($ch);    
+    $json_data = curl_exec($ch);    
     
-    if($xml_data === FALSE)
+    if($json_data === FALSE)
     {
     }
     
-    $header = substr($xml_data, 0, strpos($xml_data, "\r\n\r\n"));
+    $header = substr($json_data, 0, strpos($json_data, "\r\n\r\n"));
     
-    $data = substr($xml_data, strpos($xml_data, "\r\n\r\n") + 4, strlen($xml_data) - (strpos($xml_data, "\r\n\r\n") - 4));
+    $data = substr($json_data, strpos($json_data, "\r\n\r\n") + 4, strlen($json_data) - (strpos($json_data, "\r\n\r\n") - 4));
     
     curl_close($ch);    
     
-    $resultset = new SimpleXMLElement($data);
-
-    $crudAction = "create";
+    $resultset = json_decode($data);
     
-    foreach($resultset->results->result as $result) 
+    $crudAction = "create";
+
+    foreach($resultset->results->bindings as $binding) 
     {
       $s = "";
       $p = "";
       $o = "";
       $olang = "";
-      $otype = "";
-        
-      foreach($result->binding as $binding)
-      {            
-        switch((string)$binding["name"])
-        {
-          case "s":
-            $s = (string)$binding->uri;
-          break;
-          case "p":
-            $p = (string)$binding->uri;
-          break;
-          case "o":
-            if($binding->uri)
-            {
-              $o = (string)$binding->uri;                
-            }
-            else
-            {
-              $o = (string)$binding->literal;                                  
-            }              
-          break;
-          case "olang":
-            $olang = (string)$binding->literal;
-          break;
-          case "otype":
-            $otype = (string)$binding->uri;
-          break;
-        }
+      $otype = "";      
+      
+      if(isset($binding->o))
+      {
+        $o = $binding->o->value;                
+      }
+      
+      if(isset($binding->s))
+      {
+        $s = $binding->s->value;
+      }
+      
+      if(isset($binding->p))
+      {
+        $p = $binding->p->value;
+      }
+      
+      if(isset($binding->olang))
+      {
+        $olang = $binding->olang->value;
+      }
+      
+      if(isset($binding->otype))
+      {
+        $otype = $binding->otype->value;
       }
         
       if($s != $currentSubject)
@@ -527,7 +523,7 @@ function defaultConverter($file, $dataset, $setup = array())
           break;
         }            
       }          
-    }        
+    }    
     
     // Add the last record that got processed above
     switch(strtolower($crudAction))
