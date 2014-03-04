@@ -137,19 +137,27 @@ function defaultConverter($file, $dataset, $setup = array())
         
         $crudPermissions = new CRUDPermission(TRUE, TRUE, TRUE, TRUE);
         
-        $authRegistrarAccess->create($dataset['group'], $dataset["datasetURI"], $crudPermissions, $webservices)
-                            ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
-        
-        if(!$authRegistrarAccess->isSuccessful())      
+        if(!is_array($dataset['groups']))
         {
-          $debugFile = md5(microtime()).'.error';
-          file_put_contents('/tmp/'.$debugFile, var_export($authRegistrarAccess, TRUE));
-               
-          @cecho('Can\'t create permissions for this new dataset: '.$dataset["datasetURI"].'. '. $authRegistrarAccess->getStatusMessage() . 
-               $authRegistrarAccess->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
-               
-          exit(1);
-        }                 
+          $dataset['groups'] = array($dataset['groups']);
+        }
+        
+        foreach($dataset['groups'] as $group)
+        {
+          $authRegistrarAccess->create($group, $dataset["datasetURI"], $crudPermissions, $webservices)
+                              ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
+          
+          if(!$authRegistrarAccess->isSuccessful())      
+          {
+            $debugFile = md5(microtime()).'.error';
+            file_put_contents('/tmp/'.$debugFile, var_export($authRegistrarAccess, TRUE));
+                 
+            @cecho('Can\'t create permissions for this new dataset: '.$dataset["datasetURI"].'. '. $authRegistrarAccess->getStatusMessage() . 
+                 $authRegistrarAccess->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
+                 
+            exit(1);
+          }          
+        }
         
         $newDataset = TRUE;
         
