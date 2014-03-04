@@ -528,12 +528,13 @@
         {
           $hashFile .= $filePath.":".$md5."\n";
         }
-        
+
         // Update all added/modified files
         if(count($updateFiles) > 0)
         {
           include_once($dataset["converterPath"].$dataset["converterScript"]);
           
+          $nb = 0;
           foreach($updateFiles as $key => $updateFile)
           {
             // Propagate the global setting to the dataset's settings.
@@ -542,10 +543,17 @@
             $setup[$datasetName]["missingVocabulary"] = $setup["config"]["missingVocabulary"];
             $setup[$datasetName]['credentials'] = $setup["credentials"];
             
+            if($nb > 0)
+            {
+              $dataset['forceReload'] = 'false';
+              $dataset['forceReloadSolrIndex'] = 'false';
+            }
+            
             // This is needed in case of name collision; Namespaces are only supported in PHP 6
             call_user_func($dataset["converterFunctionName"], $updateFile, $dataset, $setup[$datasetName]);
             
             cecho("File updated: $updateFile\n", 'GREEN');  
+            $nb++;
           }
         }
         
