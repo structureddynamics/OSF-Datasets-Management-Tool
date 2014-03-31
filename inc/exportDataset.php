@@ -2,6 +2,8 @@
 
   use \StructuredDynamics\osf\php\api\ws\search\SearchQuery;
   use \StructuredDynamics\osf\php\api\ws\crud\read\CrudReadQuery;
+  use \StructuredDynamics\osf\php\api\ws\revision\lister\RevisionListerQuery;
+  use \StructuredDynamics\osf\php\api\ws\revision\read\RevisionReadQuery;
   
   use \StructuredDynamics\osf\framework\Namespaces;
   use \StructuredDynamics\osf\framework\Resultset;
@@ -13,11 +15,18 @@
   * @param mixed $uri URI of the dataset to export
   * @param mixed $file File where to export the dataset
   * @param mixed $mime Mime to use for the exported dataset file
+  * @param mixed $exclude_reifications Exclude reifications statements from the exported dataset
   * 
   * @return Return FALSE if the dataset couldn't be exported. Return TRUE otherwise.
   */
-  function exportDataset($uri, $credentials, $file, $mime)
+  function exportDataset($uri, $credentials, $file, $mime, $exclude_reifications)
   {
+    // Exporting a dataset means that we will export 2 different, but highly related things:
+    //
+    // (1) The dataset itself get exported, without or without reification statements
+    // (2) The revisions graph of the dataset get exported
+    
+    
     // Get the number of records in that dataset
     $search = new SearchQuery($credentials['osf-web-services'], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
     
@@ -44,6 +53,7 @@
           $prefixes = array();
 
           @unlink($file);
+          @unlink(getRevisionsFilePath($file));
           
           for($i = 0; $i < $nbResults; $i += $slice)
           {
@@ -77,6 +87,15 @@
               // Get the full description of the records from the CRUD: Read endpoint
               $crudRead = new CrudReadQuery($credentials['osf-web-services'], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
               
+              if($exclude_reifications)
+              {
+                $crudRead->excludeReification();
+              }
+              else
+              {
+                $crudRead->includeReification();
+              }
+              
               $crudRead->dataset($datasets)
                        ->uri($uris)
                        ->excludeLinksback()
@@ -108,6 +127,75 @@
               else
               {
                 cecho("Error exporting this dataset slice.\n", 'RED');  
+              }
+              
+              foreach($uris as $key => $u)
+              {
+                $revisionLister = new RevisionListerQuery($credentials['osf-web-services'], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
+                
+                $revisionLister->dataset($datasets[$key])
+                               ->uri($u)
+                               ->shortResults()
+                               ->mime('resultset')
+                               ->send();
+                               
+                if($revisionLister->isSuccessful())
+                {
+                  $listerResultset = $revisionLister->getResultset()->getResultset();
+                  
+                  if(!empty($listerResultset))
+                  {
+                    foreach($listerResultset['unspecified'] as $ruri => $revision)
+                    {
+                      $revisionRead = new RevisionReadQuery($credentials['osf-web-services'], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
+                      
+                      $revisionRead->dataset($datasets[$key])
+                                   ->revisionUri($ruri)
+                                   ->getRevision()
+                                   ->mime('resultset')
+                                   ->send();
+                                   
+                      if($revisionRead->isSuccessful())
+                      {
+                        $revision = $revisionRead->getResultset();    
+                        
+                        $rset = $revision->getResultset();
+                        
+                        unset($rset[$datasets[$key]][$ruri]['http://purl.org/dc/terms/isPartOf']);
+                        
+                        $revision->setResultset($rset);
+                        
+                        switch($mime)
+                        {
+                          case 'application/rdf+n3':
+                            $revisionRdf = $revision->getResultsetRDFN3();
+                          
+                            $prefixes = array_merge(getN3Prefixes($revisionRdf), $prefixes);
+                            $revisionRdf = n3RemovePrefixes($revisionRdf);
+                            
+                            file_put_contents(getRevisionsFilePath($file), $revisionRdf, FILE_APPEND);
+                          break;      
+                          case 'application/rdf+xml':
+                            $revisionRdf = $revision->getResultsetRDFXML();
+                            
+                            $prefixes = array_merge(getXMLPrefixes($revisionRdf), $prefixes);
+                            $revisionRdf = xmlRemovePrefixes($revisionRdf);
+                              
+                            file_put_contents(getRevisionsFilePath($file), $revisionRdf, FILE_APPEND);
+                          break;            
+                        }                        
+                      }
+                      else
+                      {
+                        
+                      }                                   
+                    }
+                  }
+                  else
+                  {
+                    
+                  }
+                }
               }   
             } 
             else
@@ -143,6 +231,31 @@
               
               unlink("/tmp/$tmpFile");
               
+              if(file_exists(getRevisionsFilePath($file)))
+              {
+                $tmpFile = md5(microtime());
+                $first = TRUE;
+                foreach($prefixes as $prefix => $uri)
+                {
+                  if($first)
+                  {
+                    exec("echo '@prefix $prefix: <$uri> .' > /tmp/$tmpFile");
+                    $first = FALSE;
+                  }
+                  else
+                  {
+                    exec("echo '@prefix $prefix: <$uri> .' >> /tmp/$tmpFile");
+                  }
+                }
+                
+                exec("echo '\n\n\n' >> /tmp/$tmpFile");
+                
+                exec("cat ".getRevisionsFilePath($file)." >> /tmp/$tmpFile");
+                exec("cp /tmp/$tmpFile ".getRevisionsFilePath($file));
+                
+                unlink("/tmp/$tmpFile");
+              }
+              
             break;
             
             case 'application/rdf+xml':
@@ -162,10 +275,33 @@
               
               exec("echo '\n\n\n' >> /tmp/$tmpFile");
               
-              exec("cat $file >> /tmp/$tmpFile");
-              exec("cp /tmp/$tmpFile $file");
+              exec("cat ".getRevisionsFilePath($file)." >> /tmp/$tmpFile");
+              exec("cp /tmp/$tmpFile ".getRevisionsFilePath($file));
               
               unlink("/tmp/$tmpFile");
+              
+              if(file_exists(getRevisionsFilePath($file)))
+              {
+                $tmpFile = md5(microtime());
+
+                exec("echo '<?xml version=\"1.0\"?>' > /tmp/$tmpFile");
+                exec("echo '<rdf:RDF ' >> /tmp/$tmpFile");
+                
+                foreach($prefixes as $prefix => $uri)
+                {
+                  exec("echo 'xmlns:$prefix=\"$uri\"' >> /tmp/$tmpFile");
+                }
+
+                exec("echo '>' >> /tmp/$tmpFile");
+
+                
+                exec("echo '\n\n\n' >> /tmp/$tmpFile");
+                
+                exec("cat ".getRevisionsFilePath($file)." >> /tmp/$tmpFile");
+                exec("cp /tmp/$tmpFile ".getRevisionsFilePath($file));
+                
+                unlink("/tmp/$tmpFile");                
+              }              
               
             break;            
           }          
@@ -233,4 +369,20 @@
   {
     return(preg_replace('/<dcterms:isPartOf\srdf:resource=".*"\s\/>/', '', $rdf));
   }  
+  
+  function getRevisionsFilePath($file)
+  {
+    $path = '';
+    $filename = $file;
+    
+    $pos = strrpos($file, '/');
+    
+    if($pos !== FALSE)
+    {
+      $path = substr($file, 0, $pos + 1);
+      $filename = substr($file, $pos + 1);
+    }
+    
+    return($path.'revisions.'.$filename);
+  }
 ?>

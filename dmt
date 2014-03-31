@@ -45,7 +45,8 @@
                                                     'queryextension::',
                                                     'config-id::',
                                                     'mime::',
-                                                    'file::'));  
+                                                    'file::',
+                                                    'exclude-reifications'));  
   
   // Displaying DSF's help screen if required
   if(isset($arguments['h']) || isset($arguments['help']) || count($arguments) == 0)
@@ -87,6 +88,7 @@
     cecho("                                                 (a) application/rdf+xml (default)'\n", 'WHITE');
     cecho("                                                 (b) application/rdf+n3'\n", 'WHITE');
     cecho("--uri=\"[URI]\"                         (optional) URI of the dataset to create\n\n", 'WHITE');
+    cecho("--exclude-reifications                  (optional) Exclude reification statements from the exported dataset\n\n", 'WHITE');
     cecho("Dataset Listing Options:\n", 'WHITE');
     cecho("--osf-web-services=\"[URL]\"                   (required) Target OSF Web Services endpoints URL.\n", 'WHITE');
     cecho("                                                 Example: 'http://localhost/ws/'\n", 'WHITE');
@@ -317,7 +319,7 @@
     {   
       cecho("Exporting dataset: ".$arguments['uri']."\n", 'CYAN');
       
-      $deleted = exportDataset($arguments['uri'], $credentials, $arguments['file'], $mime);  
+      $deleted = exportDataset($arguments['uri'], $credentials, $arguments['file'], $mime, (isset($arguments['exclude-reifications']) ? TRUE : FALSE));  
     }
     else
     {
@@ -345,7 +347,7 @@
       
       cecho("Exporting dataset: ".$dataset['label']."\n", 'CYAN');
         
-      $exported = exportDataset($dataset['uri'], $credentials, $arguments['file'], $mime);          
+      $exported = exportDataset($dataset['uri'], $credentials, $arguments['file'], $mime, (isset($arguments['exclude-reifications']) ? TRUE : FALSE));          
     }    
     
     exit;
@@ -409,7 +411,7 @@
           {
             $file = $f[0];
             
-            if(preg_match("/".$dataset["filteredFilesRegex"]."/", $f[1]) > 0)
+            if(preg_match("/^".$dataset["filteredFilesRegex"]."\$/", $f[1]) > 0)
             {
               $modified = FALSE;
               
