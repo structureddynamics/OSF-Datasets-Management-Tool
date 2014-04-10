@@ -273,7 +273,7 @@ Dataset Export Options:
                                                  (a) application/rdf+xml (default)'
                                                  (b) application/rdf+n3'
 --uri="[URI]"                         (optional) URI of the dataset to create
-
+--exclude-reifications                (optional) Exclude reification statements from the exported dataset
 Dataset Listing Options:
 --osf-web-services="[URL]"                   (required) Target OSF Web Services endpoints URL.
                                                  Example: 'http://localhost/ws/'
