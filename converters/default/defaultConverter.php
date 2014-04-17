@@ -353,24 +353,26 @@ function defaultConverter($file, $dataset, $setup = array())
     }    
     
     // Import the revisions graph
-    if(stripos($file, ".n3") !== FALSE)
-    {      
-      $sqlQuery = "DB.DBA.TTLP_MT(file_to_string_output('".getRevisionsFilePath($file)."'),'".$revisionsDataset."','".$revisionsDataset."')";
-    }
-    else
+    if(file_exists(getRevisionsFilePath($file)))
     {
-      $sqlQuery = "DB.DBA.RDF_LOAD_RDFXML_MT(file_to_string_output('".getRevisionsFilePath($file)."'),'".$revisionsDataset."','".$revisionsDataset."')";
-    }
-    
-    $resultset = $db->query($sqlQuery);
-    
-    if(odbc_error())
-    {
-      cecho("Error: can't import the revisions file: ".getRevisionsFilePath($file).", into the triple store  [".odbc_errormsg()."]\n", 'RED');
+      if(stripos($file, ".n3") !== FALSE)
+      {      
+        $sqlQuery = "DB.DBA.TTLP_MT(file_to_string_output('".getRevisionsFilePath($file)."'),'".$revisionsDataset."','".$revisionsDataset."')";
+      }
+      else
+      {
+        $sqlQuery = "DB.DBA.RDF_LOAD_RDFXML_MT(file_to_string_output('".getRevisionsFilePath($file)."'),'".$revisionsDataset."','".$revisionsDataset."')";
+      }
       
-      return;
-    }    
-    
+      $resultset = $db->query($sqlQuery);
+      
+      if(odbc_error())
+      {
+        cecho("Error: can't import the revisions file: ".getRevisionsFilePath($file).", into the triple store  [".odbc_errormsg()."]\n", 'RED');
+        
+        return;
+      }       
+    }
     
     unset($resultset);   
   }
