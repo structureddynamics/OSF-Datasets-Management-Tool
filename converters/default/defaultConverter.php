@@ -10,7 +10,7 @@
            Virtuoso config file.
 */
 
-use \StructuredDynamics\osf\ws\framework\DBVirtuoso;
+use \StructuredDynamics\osf\ws\framework\SparqlQuery;
 use \StructuredDynamics\osf\ws\framework\WebService;
 use \StructuredDynamics\osf\framework\WebServiceQuerier;
 use \StructuredDynamics\osf\ws\framework\ClassHierarchy;
@@ -66,8 +66,9 @@ function defaultConverter($file, $dataset, $setup = array())
   // Create a connection to the triple store
   $osf_ini = parse_ini_file(WebService::$osf_ini . "osf.ini", TRUE);
 
-  $db = new DBVirtuoso($osf_ini["triplestore"]["username"], $osf_ini["triplestore"]["password"],
-                       $osf_ini["triplestore"]["dsn"], $osf_ini["triplestore"]["host"]); 
+  $sparql = new SparqlQuery('http://'. $osf_ini["triplestore"]["host"] . ':' .
+                                       $osf_ini["triplestore"]["port"] . '/' .
+                                       $osf_ini["triplestore"]["sparql"]);
 
                        
   // Check if the dataset is existing, if it doesn't, we try to create it
@@ -320,88 +321,47 @@ function defaultConverter($file, $dataset, $setup = array())
      strtolower($dataset['forceReloadSolrIndex']) == 'false' &&
      $newDataset === FALSE)
   { 
-    $sqlQuery = "sparql clear graph <".$importDataset.">";
+    $sparql->query("clear graph <".$importDataset.">");
     
-    $resultset = $db->query($sqlQuery);
-
-    if(odbc_error())
+    if($sparql->error())
     {
-      cecho("Error: can't delete the graph used for importing the file [".odbc_errormsg()."]\n", 'RED');
+      cecho("Error: can't delete the graph used for importing the file [".$sparql->errormsg()."]\n", 'RED');
       
       return;
     }    
     
-    unset($resultset);                               
-                          
     // Import the big file into Virtuoso  
-    if(stripos($file, ".n3") !== FALSE)
-    {      
-      $sqlQuery = "DB.DBA.TTLP_MT(file_to_string_output('".$file."'),'".$importDataset."','".$importDataset."')";
-    }
-    else
-    {
-      $sqlQuery = "DB.DBA.RDF_LOAD_RDFXML_MT(file_to_string_output('".$file."'),'".$importDataset."','".$importDataset."')";
-    }
-    
-    $resultset = $db->query($sqlQuery);
-    
-    if(odbc_error())
-    {
-      cecho("Error: can't import the file: $file, into the triple store  [".odbc_errormsg()."]\n", 'RED');
-      
-      return;
-    }    
+    import_file($importDataset, $file, $sparql, $osf_ini);
     
     // Import the revisions graph
     if(file_exists(getRevisionsFilePath($file)))
     {
-      if(stripos($file, ".n3") !== FALSE)
-      {      
-        $sqlQuery = "DB.DBA.TTLP_MT(file_to_string_output('".getRevisionsFilePath($file)."'),'".$revisionsDataset."','".$revisionsDataset."')";
-      }
-      else
-      {
-        $sqlQuery = "DB.DBA.RDF_LOAD_RDFXML_MT(file_to_string_output('".getRevisionsFilePath($file)."'),'".$revisionsDataset."','".$revisionsDataset."')";
-      }
-      
-      $resultset = $db->query($sqlQuery);
-      
-      if(odbc_error())
-      {
-        cecho("Error: can't import the revisions file: ".getRevisionsFilePath($file).", into the triple store  [".odbc_errormsg()."]\n", 'RED');
-        
-        return;
-      }       
+      import_file($revisionsDataset, getRevisionsFilePath($file), $sparql, $osf_ini);
     }
-    
-    unset($resultset);   
   }
 
   // count the number of records
-  $sparqlQuery = "
-  
-    select count(distinct ?s) as ?nb from <".$importDataset.">
+  $sparql->query("select count(distinct ?s) as ?nb from <".$importDataset.">
     where
     {
       ?s a ?o .
-    }
-  
-  ";
+    }");
 
-  $resultset = $db->query($db->build_sparql_query($sparqlQuery, array ('nb'), FALSE));
+  if($sparql->error())
+  {
+    echo $sparql->errormsg();
+    die;
+  }
   
-  $nb = odbc_result($resultset, 1);
-
-  unset($resultset);
+  $sparql->fetch_binding();
+  $nb = $sparql->value('nb');
   
   $nbRecordsDone = 0;
 
   while($nbRecordsDone < $nb && $nb > 0)
   {
     // Create slices of records
-    $sparqlQuery = "
-      
-      select ?s ?p ?o (DATATYPE(?o)) as ?otype (LANG(?o)) as ?olang
+    $sparql->query("select ?s ?p ?o
       where 
       {
         {
@@ -415,82 +375,37 @@ function defaultConverter($file, $dataset, $setup = array())
         } 
         
         ?s ?p ?o
-      }
-    
-    ";
+      }");
 
     $crudCreates = '';
     $crudUpdates = '';
     $crudDeletes = array();
-    
-    $rdfDocumentN3 = "";
     
     $start = microtime_float(); 
     
     $currentSubject = "";
     $subjectDescription = "";             
     
-    $osf_ini = parse_ini_file(WebService::$osf_ini . "osf.ini", TRUE);
-    
-    $ch = curl_init();        
-
-    curl_setopt($ch, CURLOPT_URL, $osf_ini['triplestore']['host'].":".$osf_ini['triplestore']['port']."/sparql/");
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array("Accept: application/sparql-results+json", "Accept-Charset: utf-8"));
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, "default-graph-uri=".urlencode($importDataset)."&query=".urlencode($sparqlQuery)."&format=".urlencode("application/sparql-results+json")."&debug=on");      
-    curl_setopt($ch, CURLOPT_HEADER, TRUE);            
-    
-    $json_data = curl_exec($ch);    
-    
-    if($json_data === FALSE)
-    {
-    }
-    
-    $header = substr($json_data, 0, strpos($json_data, "\r\n\r\n"));
-    
-    $data = substr($json_data, strpos($json_data, "\r\n\r\n") + 4, strlen($json_data) - (strpos($json_data, "\r\n\r\n") - 4));
-    
-    curl_close($ch);    
-    
-    $resultset = json_decode($data);
-    
     $crudAction = "create";
 
-    foreach($resultset->results->bindings as $binding) 
+    while($sparql->fetch_binding())
     {
-      $s = "";
-      $p = "";
-      $o = "";
-      $olang = "";
-      $otype = "";      
+      $s = $sparql->value('s');
+      $p = $sparql->value('p');
+      $o = $sparql->value('o');
+      $olang = '';
+      $otype = '';     
       
-      if(isset($binding->o))
+      if(array_key_exists('datatype', $sparql->value('o', TRUE)))
       {
-        $o = $binding->o->value;                
+        $otype = $sparql->value('o', TRUE)['datatype'];
+      }
+
+      if(array_key_exists('xml:lang', $sparql->value('o', TRUE)))
+      {
+        $olang = $sparql->value('o', TRUE)['xml:lang'];
       }
       
-      if(isset($binding->s))
-      {
-        $s = $binding->s->value;
-      }
-      
-      if(isset($binding->p))
-      {
-        $p = $binding->p->value;
-      }
-      
-      if(isset($binding->olang))
-      {
-        $olang = $binding->olang->value;
-      }
-      
-      if(isset($binding->otype))
-      {
-        $otype = $binding->otype->value;
-      }
-        
       if($s != $currentSubject)
       {
         switch(strtolower($crudAction))
@@ -535,7 +450,14 @@ function defaultConverter($file, $dataset, $setup = array())
         }
         else
         {
-          $subjectDescription .= "<$s> <$p> <$o> .\n";
+          if($sparql->value('o', TRUE)['type'] == 'literal')
+          {
+            $subjectDescription .= "<$s> <$p> \"\"\"".n3Encode($o)."\"\"\" .\n";
+          }
+          else
+          {
+            $subjectDescription .= "<$s> <$p> <$o> .\n";
+          }
         }
       }
       else
@@ -557,7 +479,7 @@ function defaultConverter($file, $dataset, $setup = array())
         }            
       }          
     }    
-    
+
     // Add the last record that got processed above
     switch(strtolower($crudAction))
     {
@@ -578,8 +500,6 @@ function defaultConverter($file, $dataset, $setup = array())
     $end = microtime_float(); 
     
     cecho('Create N3 file(s): ' . round($end - $start, 3) . ' seconds'."\n", 'WHITE');   
-    
-    unset($resultset);
     
     if($crudCreates != "")
     {
@@ -702,100 +622,38 @@ function defaultConverter($file, $dataset, $setup = array())
     $usedTypes = array();
     
     // Get used properties
-    $sparqlQuery = "
-      
-      select distinct ?p from <".$importDataset.">
+    $sparql->query("select distinct ?p from <".$importDataset.">
       where 
       {
         ?s ?p ?o .
-      }
-    
-    ";
+      }");
 
-    $osf_ini = parse_ini_file(WebService::$osf_ini . "osf.ini", TRUE);
-    
-    $ch = curl_init();        
-
-    curl_setopt($ch, CURLOPT_URL, $osf_ini['triplestore']['host'].":".$osf_ini['triplestore']['port']."/sparql/");
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array("Accept: application/sparql-results+xml"));
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, "default-graph-uri=".urlencode($importDataset)."&query=".urlencode($sparqlQuery)."&format=".urlencode("application/sparql-results+xml")."&debug=on");      
-    curl_setopt($ch, CURLOPT_HEADER, TRUE);            
-    
-    $xml_data = curl_exec($ch);            
-    $header = substr($xml_data, 0, strpos($xml_data, "\r\n\r\n"));        
-    $data = substr($xml_data, strpos($xml_data, "\r\n\r\n") + 4, strlen($xml_data) - (strpos($xml_data, "\r\n\r\n") - 4));        
-    curl_close($ch);    
-    
-    $resultset = new SimpleXMLElement($data);
-    
-    foreach($resultset->results->result as $result) 
-    {           
-      foreach($result->binding as $binding)
-      {            
-        switch((string)$binding["name"])
-        {
-          case "p":
-            $p = (string)$binding->uri;
-            
-            if(!in_array($p, $usedProperties))
-            {
-              array_push($usedProperties, $p);
-            }
-          break;
-        }
-      }
-    }      
-    
-    // Get used types
-    $sparqlQuery = "
+    while($sparql->fetch_binding())
+    {
+      $p = $sparql->value('p');
       
-      select distinct ?o from <".$importDataset.">
+      if(!in_array($p, $usedProperties))
+      {
+        array_push($usedProperties, $p);
+      }
+    }
+   
+    // Get used types
+    $sparql->query("select distinct ?o from <".$importDataset.">
       where 
       {
         ?s a ?o .
-      }
-    
-    ";
+      }");
 
-    $osf_ini = parse_ini_file(WebService::$osf_ini . "osf.ini", TRUE);
-    
-    $ch = curl_init();        
-
-    curl_setopt($ch, CURLOPT_URL, $osf_ini['triplestore']['host'].":".$osf_ini['triplestore']['port']."/sparql/");
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array("Accept: application/sparql-results+xml"));
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, "default-graph-uri=".urlencode($importDataset)."&query=".urlencode($sparqlQuery)."&format=".urlencode("application/sparql-results+xml")."&debug=on");      
-    curl_setopt($ch, CURLOPT_HEADER, TRUE);            
-    
-    $xml_data = curl_exec($ch);            
-    $header = substr($xml_data, 0, strpos($xml_data, "\r\n\r\n"));        
-    $data = substr($xml_data, strpos($xml_data, "\r\n\r\n") + 4, strlen($xml_data) - (strpos($xml_data, "\r\n\r\n") - 4));        
-    curl_close($ch);    
-    
-    $resultset = new SimpleXMLElement($data);
-    
-    foreach($resultset->results->result as $result) 
-    {           
-      foreach($result->binding as $binding)
-      {            
-        switch((string)$binding["name"])
-        {
-          case "o":
-            $o = (string)$binding->uri;
-            
-            if(!in_array($o, $usedTypes))
-            {
-              array_push($usedTypes, $o);
-            }
-          break;
-        }
+    while($sparql->fetch_binding())
+    {
+      $o = $sparql->value('o');
+      
+      if(!in_array($o, $usedTypes))
+      {
+        array_push($usedTypes, $o);
       }
-    }        
+    }           
 
     // Now check to make sure that all the predicates and types are in the ontological structure.
     $undefinedPredicates = array();
@@ -857,22 +715,17 @@ function defaultConverter($file, $dataset, $setup = array())
      
     
     // Now delete the graph we used to import the file
-
-    $sqlQuery = "sparql clear graph <".$importDataset.">";
+    $sparql->query("clear graph <".$importDataset.">");
     
-    $resultset = $db->query($sqlQuery);
-
-    if(odbc_error())
+    if($sparql->error())
     {
-      cecho("Error: can't delete the graph used for importing the file [".odbc_errormsg()."]\n", 'RED');
+      cecho("Error: can't delete the graph used for importing the file [".$sparql->errormsg()."]\n", 'RED');
       
       return;
     }    
     
     unset($resultset);  
   }  
-  
-  $db->close(); 
   
   echo "\n";  
 }
@@ -890,4 +743,39 @@ function n3Encode($string)
   return(trim(str_replace(array( "\\" ), "\\\\", $string), '"'));
 }
        
+/**
+* Import a big file in the triple store. Each triple store have their own way
+* of importing big datasets file(s), and this is why we do create a specific
+* function for performing this task. If you are using a triple store different
+* than Virtuoso, then you will have to properly re-write this function such that
+* it works with your triplestore.
+* 
+* @param mixed $dataset
+* @param mixed $file
+* @param mixed $sparql
+* @param mixed $osf_ini
+*/
+function import_file($dataset, $file, $sparql, $osf_ini)       
+{
+  if(filesize($file) < 10000000)
+  {
+    // If the file is not too big, then use the SPARQL UPDATE LOAD statement
+    $sparql->query('load <file://'.$file.'> into graph <'.$importDataset.'>');
+    
+    if($sparql->error())
+    {
+      cecho("Error: can't import the file: $file, into the triple store  [".$sparql->errormsg()."]\n", 'RED');
+      
+      return;
+    }    
+  }
+  else
+  {
+    // If the file is too big, use the endpoints that implements the SPARQL 1.1 Graph Store HTTP Protocol
+    exec('curl --digest --user "'.
+         $osf_ini['triplestore']['username'].':'.$osf_ini['triplestore']['password']
+         .'" --url "'.
+         'http://'.$osf_ini['triplestore']['host'].':'.$osf_ini['triplestore']['port'].'/'.$osf_ini['triplestore']['sparql-graph'].'?graph-uri='.$dataset.'" -X POST -T '.$file, $output, $return);
+  }
+}
 ?>
