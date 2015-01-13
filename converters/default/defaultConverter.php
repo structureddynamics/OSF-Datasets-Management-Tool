@@ -370,6 +370,7 @@ function defaultConverter($file, $dataset, $setup = array())
           {
             ?s a ?type.
           } 
+          order by ?s
           limit ".$setup["sliceSize"]." 
           offset ".$nbRecordsDone."
         } 
