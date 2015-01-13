@@ -760,8 +760,8 @@ function import_file($dataset, $file, $sparql, $osf_ini)
   if(filesize($file) < 10000000)
   {
     // If the file is not too big, then use the SPARQL UPDATE LOAD statement
-    $sparql->query('load <file://'.$file.'> into graph <'.$importDataset.'>');
-    
+    $sparql->query('load <file://'.$file.'> into graph <'.$dataset.'>');
+
     if($sparql->error())
     {
       cecho("Error: can't import the file: $file, into the triple store  [".$sparql->errormsg()."]\n", 'RED');
