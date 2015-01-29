@@ -10,7 +10,8 @@
            Virtuoso config file.
 */
 
-use \StructuredDynamics\osf\ws\framework\SparqlQuery;
+use \StructuredDynamics\osf\ws\framework\SparqlQueryHttp; 
+use \StructuredDynamics\osf\ws\framework\SparqlQueryOdbc; 
 use \StructuredDynamics\osf\ws\framework\WebService;
 use \StructuredDynamics\osf\framework\WebServiceQuerier;
 use \StructuredDynamics\osf\ws\framework\ClassHierarchy;
@@ -66,10 +67,22 @@ function defaultConverter($file, $dataset, $setup = array())
   // Create a connection to the triple store
   $osf_ini = parse_ini_file(WebService::$osf_ini . "osf.ini", TRUE);
 
-  $sparql = new SparqlQuery('http://'. $osf_ini["triplestore"]["host"] . ':' .
-                                       $osf_ini["triplestore"]["port"] . '/' .
-                                       $osf_ini["triplestore"]["sparql"]);
-
+  switch($osf_ini["triplestore"]["channel"])
+  {
+    case 'http':
+      $sparql = new SparqlQueryHttp('http://'. $osf_ini["triplestore"]["host"] . ':' .
+                                               $osf_ini["triplestore"]["port"] . '/' .
+                                               $osf_ini["triplestore"]["sparql"]);   
+    break;
+    
+    case 'odbc':
+    default:
+      $sparql = new SparqlQueryOdbc($osf_ini["triplestore"]["username"],
+                                    $osf_ini["triplestore"]["password"],
+                                    $osf_ini["triplestore"]["dsn"],
+                                    $osf_ini["triplestore"]["host"]);   
+    break;
+  }  
                        
   // Check if the dataset is existing, if it doesn't, we try to create it
   $datasetRead = new DatasetReadQuery($setup["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
@@ -320,7 +333,7 @@ function defaultConverter($file, $dataset, $setup = array())
   if(!isset($dataset['forceReloadSolrIndex']) ||
      strtolower($dataset['forceReloadSolrIndex']) == 'false' &&
      $newDataset === FALSE)
-  { 
+  {     
     $sparql->query("clear graph <".$importDataset.">");
     
     if($sparql->error())
@@ -331,26 +344,32 @@ function defaultConverter($file, $dataset, $setup = array())
     }    
     
     // Import the big file into Virtuoso  
-    import_file($importDataset, $file, $sparql, $osf_ini);
+    if(!import_file($importDataset, $file, $sparql, $osf_ini))
+    {
+      exit(1);
+    }
     
     // Import the revisions graph
     if(file_exists(getRevisionsFilePath($file)))
     {
-      import_file($revisionsDataset, getRevisionsFilePath($file), $sparql, $osf_ini);
+      if(!import_file($revisionsDataset, getRevisionsFilePath($file), $sparql, $osf_ini))
+      {
+        exit(1);
+      }
     }
   }
 
   // count the number of records
   $sparql->query("select count(distinct ?s) as ?nb from <".$importDataset.">
-    where
-    {
-      ?s a ?o .
-    }");
+                  where
+                  {
+                    ?s a ?o .
+                  }");
 
   if($sparql->error())
   {
-    echo $sparql->errormsg();
-    die;
+    @cecho('Error: '. $sparql->errormsg(), 'RED');
+    exit(1);
   }
   
   $sparql->fetch_binding();
@@ -361,22 +380,31 @@ function defaultConverter($file, $dataset, $setup = array())
   while($nbRecordsDone < $nb && $nb > 0)
   {
     // Create slices of records
-    $sparql->query("select ?s ?p ?o
-      where 
-      {
-        {
-          select distinct ?s from <".$importDataset."> 
-          where 
-          {
-            ?s a ?type.
-          } 
-          order by ?s
-          limit ".$setup["sliceSize"]." 
-          offset ".$nbRecordsDone."
-        } 
+    $sparql->query("select ?s ?p ?o (DATATYPE(?o)) as ?otype (LANG(?o)) as ?olang
+                    where 
+                    {      
+                      {
+                        select distinct ?s
+                        from <".$importDataset."> 
+                        where 
+                        {
+                          {
+                            select distinct ?s
+                            from <".$importDataset."> 
+                            where 
+                            {   
+                              ?s a ?type.
+                            } 
+                            order by ?s
+                          }
+                        } 
+                        
+                        limit ".$setup["sliceSize"]." 
+                        offset ".$nbRecordsDone."
+                      } 
         
-        ?s ?p ?o
-      }");
+                      ?s ?p ?o
+                    }");
 
     $crudCreates = '';
     $crudUpdates = '';
@@ -388,229 +416,248 @@ function defaultConverter($file, $dataset, $setup = array())
     $subjectDescription = "";             
     
     $crudAction = "create";
-
-    while($sparql->fetch_binding())
+    
+    if($sparql->error())
     {
-      $s = $sparql->value('s');
-      $p = $sparql->value('p');
-      $o = $sparql->value('o');
-      $olang = '';
-      $otype = '';     
-      
-      if(array_key_exists('datatype', $sparql->value('o', TRUE)))
+      if(stripos($sparql->errormsg(), "404") > -1)
       {
-        $otype = $sparql->value('o', TRUE)['datatype'];
+        @cecho("Error: ". $sparql->errormsg() ."\n" .
+               "Debug: ". var_export($sparql, TRUE) ."\n", 'RED');
       }
-
-      if(array_key_exists('xml:lang', $sparql->value('o', TRUE)))
+      else
       {
-        $olang = $sparql->value('o', TRUE)['xml:lang'];
+        @cecho("Error: ". $sparql->errormsg() ."\n");
       }
-      
-      if($s != $currentSubject)
+    }
+    else
+    {    
+      while($sparql->fetch_binding())
       {
-        switch(strtolower($crudAction))
-        {
-          case "update":
-            $crudUpdates .= $subjectDescription;
-          break;
-          
-          case "delete":
-            array_push($crudDeletes, $currentSubject);
-          break;
-          
-          case "create":
-          default:
-            $crudCreates .= $subjectDescription;
-          break;
-        } 
+        $s = $sparql->value('s');
+        $p = $sparql->value('p');
+        $o = $sparql->value('o');
+        $olang = $sparql->value('olang');
+        $otype = $sparql->value('otype');     
         
-        $subjectDescription = ""; 
-        $crudAction = "create";
-        $currentSubject = $s;                      
-      }
-      
-      // Check to see if a "crudAction" property/value has been defined for this record. If not,
-      // then we simply consider it as "create"
-      if($p != "http://purl.org/ontology/wsf#crudAction")
-      {
-        if($otype != "" || $olang != "")
+        if(!$olang)
         {
-          if($olang != "")
-          {
-            $subjectDescription .= "<$s> <$p> \"\"\"".n3Encode($o)."\"\"\"@$olang .\n";
-          }
-          elseif($otype != 'http://www.w3.org/2001/XMLSchema#string')
-          {
-            $subjectDescription .= "<$s> <$p> \"\"\"".n3Encode($o)."\"\"\"^^<$otype>.\n";
-          }
-          else
-          {
-            $subjectDescription .= "<$s> <$p> \"\"\"".n3Encode($o)."\"\"\" .\n";
-          }
+          $olang = '';
         }
-        else
+        elseif($olang != '')
         {
-          if($sparql->value('o', TRUE)['type'] == 'literal')
+          /* If a language is defined for an object, we force its type to be xsd:string */
+          $otype = "http://www.w3.org/2001/XMLSchema#string";
+        }            
+                
+        if($s != $currentSubject)
+        {
+          switch(strtolower($crudAction))
           {
-            $subjectDescription .= "<$s> <$p> \"\"\"".n3Encode($o)."\"\"\" .\n";
+            case "update":
+              $crudUpdates .= $subjectDescription;
+            break;
+            
+            case "delete":
+              array_push($crudDeletes, $currentSubject);
+            break;
+            
+            case "create":
+            default:
+              $crudCreates .= $subjectDescription;
+            break;
+          } 
+          
+          $subjectDescription = ""; 
+          $crudAction = "create";
+          $currentSubject = $s;                      
+        }
+        
+        // Check to see if a "crudAction" property/value has been defined for this record. If not,
+        // then we simply consider it as "create"
+        if($p != "http://purl.org/ontology/wsf#crudAction")
+        {
+          if(!empty($otype) || !empty($olang))
+          {
+            if(!empty($olang))
+            {
+              $subjectDescription .= "<$s> <$p> \"\"\"".n3Encode($o)."\"\"\"@$olang .\n";
+            }
+            elseif(!empty($otype) && $otype != 'http://www.w3.org/2001/XMLSchema#string')
+            {
+              $subjectDescription .= "<$s> <$p> \"\"\"".n3Encode($o)."\"\"\"^^<$otype>.\n";
+            }
+            else
+            {
+              $subjectDescription .= "<$s> <$p> \"\"\"".n3Encode($o)."\"\"\" .\n";
+            }
           }
           else
           {
             $subjectDescription .= "<$s> <$p> <$o> .\n";
           }
         }
-      }
-      else
-      {
-        switch(strtolower($o))
+        else
         {
-          case "update":
-            $crudAction = "update";
-          break;
-          
-          case "delete":
-            $crudAction = "delete";
-          break;
-          
-          case "create":
-          default:
-            $crudAction = "create";
-          break;
-        }            
-      }          
-    }    
+          switch(strtolower($o))
+          {
+            case "update":
+              $crudAction = "update";
+            break;
+            
+            case "delete":
+              $crudAction = "delete";
+            break;
+            
+            case "create":
+            default:
+              $crudAction = "create";
+            break;
+          }            
+        }          
+      }    
 
-    // Add the last record that got processed above
-    switch(strtolower($crudAction))
-    {
-      case "update":
-        $crudUpdates .= $subjectDescription;
-      break;
-      
-      case "delete":
-        array_push($crudDeletes, $currentSubject);
-      break;
-      
-      case "create":
-      default:
-        $crudCreates .= $subjectDescription;
-      break;
-    }         
-          
-    $end = microtime_float(); 
-    
-    cecho('Create N3 file(s): ' . round($end - $start, 3) . ' seconds'."\n", 'WHITE');   
-    
-    if($crudCreates != "")
-    {
-      $crudCreates = "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\n".$crudCreates;
-      
-      $start = microtime_float(); 
-      
-      $crudCreate = new CrudCreateQuery($dataset["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
-      
-      $crudCreate->dataset($dataset["datasetURI"])
-                 ->documentMimeIsRdfN3()
-                 ->document($crudCreates);
-                 
-      if(isset($dataset['forceReloadSolrIndex']) &&
-         strtolower($dataset['forceReloadSolrIndex']) == 'true')
+      // Add the last record that got processed above
+      switch(strtolower($crudAction))
       {
-        $crudCreate->enableSearchIndexationMode();                       
-      }
-      else
-      {
-        $crudCreate->enableFullIndexationMode();
-      }
-                 
-      $crudCreate->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
-      
-      if(!$crudCreate->isSuccessful())
-      {
-        $debugFile = md5(microtime()).'.error';
-        file_put_contents('/tmp/'.$debugFile, var_export($crudCreate, TRUE));
-             
-        @cecho('Can\'t commit (CRUD Create) a slice to the target dataset. '. $crudCreate->getStatusMessage() . 
-             $crudCreate->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
-      }
-      
+        case "update":
+          $crudUpdates .= $subjectDescription;
+        break;
+        
+        case "delete":
+          array_push($crudDeletes, $currentSubject);
+        break;
+        
+        case "create":
+        default:
+          $crudCreates .= $subjectDescription;
+        break;
+      }         
+            
       $end = microtime_float(); 
       
-      if(isset($dataset['forceReloadSolrIndex']) &&
-         strtolower($dataset['forceReloadSolrIndex']) == 'true')
-      {      
-        cecho('Records created in Solr: ' . round($end - $start, 3) . ' seconds'."\n", 'WHITE');         
-      }
-      else
+      cecho('Create N3 file(s): ' . round($end - $start, 3) . ' seconds'."\n", 'WHITE');   
+      
+      if($crudCreates != "")
       {
-        cecho('Records created in Virtuoso & Solr: ' . round($end - $start, 3) . ' seconds'."\n", 'WHITE');
-      }
-      
-      unset($wsq);   
-    }
-    
-    if($crudUpdates != "")
-    {
-      $crudUpdates = "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\n".$crudUpdates;      
-      
-      $start = microtime_float(); 
-      
-      $crudUpdate = new CrudUpdateQuery($dataset["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
-      
-      $crudUpdate->dataset($dataset["datasetURI"])
-                 ->documentMimeIsRdfN3()
-                 ->document($crudUpdates)
-                 ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
-                 
-      if(!$crudUpdate->isSuccessful())
-      {
-        $debugFile = md5(microtime()).'.error';
-        file_put_contents('/tmp/'.$debugFile, var_export($crudUpdate, TRUE));
-             
-        @cecho('Can\'t commit (CRUD Updates) a slice to the target dataset. '. $crudUpdate->getStatusMessage() . 
-             $crudUpdate->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
-      }                 
-      
-      $end = microtime_float(); 
-      
-      cecho('Records updated: ' . round($end - $start, 3) . ' seconds'."\n", 'WHITE');
-      
-      unset($wsq);   
-    }
-    
-    if(count($crudDeletes) > 0)
-    {
-      $start = microtime_float(); 
-      foreach($crudDeletes as $uri)
-      {
-        $crudDelete = new CrudDeleteQuery($dataset["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
+        $crudCreates = "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\n".$crudCreates;
         
-        $crudDelete->dataset($setup["datasetURI"])
-                   ->uri($uri)
-                   ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
+        $start = microtime_float(); 
         
-        if(!$crudDelete->isSuccessful())
+        $crudCreate = new CrudCreateQuery($dataset["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
+        
+        $crudCreate->dataset($dataset["datasetURI"])
+                   ->documentMimeIsRdfN3()
+                   ->document($crudCreates);
+                   
+        if(isset($dataset['forceReloadSolrIndex']) &&
+           strtolower($dataset['forceReloadSolrIndex']) == 'true')
+        {
+          $crudCreate->enableSearchIndexationMode();                       
+        }
+        else
+        {
+          $crudCreate->enableFullIndexationMode();
+        }
+                   
+        $crudCreate->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
+        
+        if(!$crudCreate->isSuccessful())
         {
           $debugFile = md5(microtime()).'.error';
-          file_put_contents('/tmp/'.$debugFile, var_export($crudDelete, TRUE));
+          file_put_contents('/tmp/'.$debugFile, var_export($crudCreate, TRUE));
                
-          @cecho('Can\'t commit (CRUD Delete) a record to the target dataset. '. $crudDelete->getStatusMessage() . 
-               $crudDelete->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
-        }        
+          @cecho('Can\'t commit (CRUD Create) a slice to the target dataset. '. $crudCreate->getStatusMessage() . 
+               $crudCreate->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
+        }
+        
+        $end = microtime_float(); 
+        
+        if(isset($dataset['forceReloadSolrIndex']) &&
+           strtolower($dataset['forceReloadSolrIndex']) == 'true')
+        {      
+          cecho('Records created in Solr: ' . round($end - $start, 3) . ' seconds'."\n", 'WHITE');         
+        }
+        else
+        {
+          cecho('Records created in Virtuoso & Solr: ' . round($end - $start, 3) . ' seconds'."\n", 'WHITE');
+        }
+        
+        unset($wsq);   
       }
       
-      $end = microtime_float(); 
-
-      cecho('Records deleted: ' . round($end - $start, 3) . ' seconds'."\n", 'WHITE');
+      if($crudUpdates != "")
+      {
+        $crudUpdates = "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\n".$crudUpdates;      
+        
+        $start = microtime_float(); 
+        
+        $crudUpdate = new CrudUpdateQuery($dataset["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
+        
+        $crudUpdate->dataset($dataset["datasetURI"])
+                   ->documentMimeIsRdfN3()
+                   ->document($crudUpdates)
+                   ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
+                   
+        if(!$crudUpdate->isSuccessful())
+        {
+          $debugFile = md5(microtime()).'.error';
+          file_put_contents('/tmp/'.$debugFile, var_export($crudUpdate, TRUE));
+               
+          @cecho('Can\'t commit (CRUD Updates) a slice to the target dataset. '. $crudUpdate->getStatusMessage() . 
+               $crudUpdate->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
+        }                 
+        
+        $end = microtime_float(); 
+        
+        cecho('Records updated: ' . round($end - $start, 3) . ' seconds'."\n", 'WHITE');
+        
+        unset($wsq);   
+      }
       
-      unset($wsq);               
-    }
+      if(count($crudDeletes) > 0)
+      {
+        $start = microtime_float(); 
+        foreach($crudDeletes as $uri)
+        {
+          $crudDelete = new CrudDeleteQuery($dataset["targetOSFWebServices"], $credentials['application-id'], $credentials['api-key'], $credentials['user']);
+          
+          $crudDelete->dataset($setup["datasetURI"])
+                     ->uri($uri)
+                     ->send((isset($dataset['targetOSFWebServicesQueryExtension']) ? new $dataset['targetOSFWebServicesQueryExtension'] : NULL));
+          
+          if(!$crudDelete->isSuccessful())
+          {
+            $debugFile = md5(microtime()).'.error';
+            file_put_contents('/tmp/'.$debugFile, var_export($crudDelete, TRUE));
+                 
+            @cecho('Can\'t commit (CRUD Delete) a record to the target dataset. '. $crudDelete->getStatusMessage() . 
+                 $crudDelete->getStatusMessageDescription()."\nDebug file: /tmp/$debugFile\n", 'RED');
+          }        
+        }
+        
+        $end = microtime_float(); 
 
+        cecho('Records deleted: ' . round($end - $start, 3) . ' seconds'."\n", 'WHITE');
+        
+        unset($wsq);               
+      }
+    }
     
-    $nbRecordsDone += $setup["sliceSize"];
+    if($osf_ini["triplestore"]["channel"] == 'odbc' || $sparql->http_status_code() != 404)
+    {
+      $nbRecordsDone += $setup["sliceSize"];
+    }
+    else
+    {
+      // If the communication channel with the SPARQL endpoint is http
+      // and if the sparql endpoint returned a 404 (Virtuoso bug), then wait a second
+      // and retry the same query until it succeed.
+      //
+      // Once the Virtuoso bug #299 is fixed, remove that behavior...
+      sleep(1);
+    }
     
-    cecho("$nbRecordsDone/$nb records for file: $file\n", 'WHITE');
+    cecho("$nbRecordsDone/$nb records for file: $file\n", 'WHITE');    
   }
   
   // Now check what are the properties and types used in this dataset, check which ones 
@@ -758,25 +805,55 @@ function n3Encode($string)
 */
 function import_file($dataset, $file, $sparql, $osf_ini)       
 {
-  if(filesize($file) < 10000000)
+  if($osf_ini["triplestore"]["channel"] == 'odbc')
   {
-    // If the file is not too big, then use the SPARQL UPDATE LOAD statement
-    $sparql->query('load <file://'.$file.'> into graph <'.$dataset.'>');
-
+    if(stripos($file, '.n3') > -1 ||
+       stripos($file, '.nt') > -1 ||
+       stripos($file, '.turtle') > -1)
+    {
+      $sparql->query("DB.DBA.TTLP_MT(file_to_string_output('".$file."'),'".$dataset."','".$dataset."')");
+    }
+    else
+    {
+      $sparql->query("DB.DBA.RDF_LOAD_RDFXML_MT(file_to_string_output('".$file."'),'".$dataset."','".$dataset."')");
+    }
+    
     if($sparql->error())
     {
       cecho("Error: can't import the file: $file, into the triple store  [".$sparql->errormsg()."]\n", 'RED');
-      
-      return;
-    }    
+
+      return(FALSE);
+    }
   }
   else
   {
-    // If the file is too big, use the endpoints that implements the SPARQL 1.1 Graph Store HTTP Protocol
-    exec('curl --digest --user "'.
-         $osf_ini['triplestore']['username'].':'.$osf_ini['triplestore']['password']
-         .'" --url "'.
-         'http://'.$osf_ini['triplestore']['host'].':'.$osf_ini['triplestore']['port'].'/'.$osf_ini['triplestore']['sparql-graph'].'?graph-uri='.$dataset.'" -X POST -T '.$file, $output, $return);
+    if(filesize($file) < 10000000)
+    {
+      // If the file is not too big, then use the SPARQL UPDATE LOAD statement
+      $sparql->query('load <file://'.$file.'> into graph <'.$dataset.'>');
+
+      if($sparql->error())
+      {
+        cecho("Error: can't import the file: $file, into the triple store  [".$sparql->errormsg()."]\n", 'RED');
+        
+        return(FALSE);
+      }    
+    }
+    else
+    {
+      // If the file is too big, use the endpoints that implements the SPARQL 1.1 Graph Store HTTP Protocol
+      exec('curl --digest --user "'.
+           $osf_ini['triplestore']['username'].':'.$osf_ini['triplestore']['password']
+           .'" --url "'.
+           'http://'.$osf_ini['triplestore']['host'].':'.$osf_ini['triplestore']['port'].'/'.$osf_ini['triplestore']['sparql-graph'].'?graph-uri='.$dataset.'" -X POST -T '.$file, $output, $return);
+      
+      if($return > 0)
+      {
+        return(FALSE);
+      }
+    }
   }
+  
+  return(TRUE);
 }
 ?>
