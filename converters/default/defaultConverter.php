@@ -638,8 +638,6 @@ function defaultConverter($file, $dataset, $setup = array())
         $end = microtime_float(); 
 
         cecho('Records deleted: ' . round($end - $start, 3) . ' seconds'."\n", 'WHITE');
-        
-        unset($wsq);               
       }
     }
     
@@ -771,8 +769,6 @@ function defaultConverter($file, $dataset, $setup = array())
       
       return;
     }    
-    
-    unset($resultset);  
   }  
   
   echo "\n";  
