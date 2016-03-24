@@ -77,10 +77,15 @@ function defaultConverter($file, $dataset, $setup = array())
     
     case 'odbc':
     default:
-      $sparql = new SparqlQueryOdbc($osf_ini["triplestore"]["username"],
-                                    $osf_ini["triplestore"]["password"],
-                                    $osf_ini["triplestore"]["dsn"],
-                                    $osf_ini["triplestore"]["host"]);   
+    
+      $wsf = new stdClass();
+      
+      $wsf->triplestore_username = $osf_ini["triplestore"]["username"];
+      $wsf->triplestore_password = $osf_ini["triplestore"]["password"];
+      $wsf->triplestore_dsn = $osf_ini["triplestore"]["dsn"];
+      $wsf->triplestore_host = $osf_ini["triplestore"]["host"];
+    
+      $sparql = new SparqlQueryOdbc($wsf);   
     break;
   }  
                        
@@ -387,16 +392,8 @@ function defaultConverter($file, $dataset, $setup = array())
                         select distinct ?s
                         from <".$importDataset."> 
                         where 
-                        {
-                          {
-                            select distinct ?s
-                            from <".$importDataset."> 
-                            where 
-                            {   
-                              ?s a ?type.
-                            } 
-                            order by ?s
-                          }
+                        {   
+                          ?s a ?type.
                         } 
                         
                         limit ".$setup["sliceSize"]." 
@@ -405,7 +402,8 @@ function defaultConverter($file, $dataset, $setup = array())
         
                       ?s ?p ?o
                     }");
-
+               
+                    
     $crudCreates = '';
     $crudUpdates = '';
     $crudDeletes = array();

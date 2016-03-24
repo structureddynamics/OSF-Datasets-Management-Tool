@@ -46,7 +46,7 @@
                                                     'config-id::',
                                                     'mime::',
                                                     'file::',
-                                                    'exclude-reifications'));  
+                                                    'exclude-reifications::'));  
   
   // Displaying DSF's help screen if required
   if(isset($arguments['h']) || isset($arguments['help']) || count($arguments) == 0)
